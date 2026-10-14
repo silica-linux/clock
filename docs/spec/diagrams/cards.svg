@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 370" width="760" height="370" font-family="Helvetica, Arial, sans-serif" font-size="10">
+<title>Clock: world clock and alarm card grid, points</title>
+<defs><marker id="a" viewBox="0 0 6 6" refX="3" refY="3" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 6 3 0 6z" fill="#c0392b"/></marker></defs>
+<rect width="760" height="370" fill="#ffffff"/>
+<rect x="20" y="40" width="720" height="250" fill="#1e1e1e"/>
+<rect x="35" y="54" width="186" height="222" rx="12" fill="#323232"/>
+<circle cx="128" cy="134" r="60" fill="#ffffff" stroke="#555"/>
+<line x1="128" y1="134" x2="150" y2="116" stroke="#000000" stroke-width="4" stroke-linecap="round"/>
+<line x1="128" y1="134" x2="122" y2="90" stroke="#000000" stroke-width="3" stroke-linecap="round"/>
+<line x1="128" y1="134" x2="168" y2="164" stroke="#ff9230" stroke-width="1"/>
+<circle cx="128" cy="134" r="3" fill="#ff9230"/>
+<text x="128" y="222" text-anchor="middle" fill="#ffffff" font-weight="600" font-size="12">City, 10:13</text>
+<text x="128" y="240" text-anchor="middle" fill="#9a9a9a">Today, +2 h</text>
+<text x="128" y="48" text-anchor="middle" fill="#cccccc">day</text>
+<rect x="237" y="54" width="186" height="222" rx="12" fill="#323232"/>
+<circle cx="330" cy="134" r="60" fill="#000000" stroke="#555"/>
+<line x1="330" y1="134" x2="352" y2="116" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+<line x1="330" y1="134" x2="324" y2="90" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+<line x1="330" y1="134" x2="370" y2="164" stroke="#ff9230" stroke-width="1"/>
+<circle cx="330" cy="134" r="3" fill="#ff9230"/>
+<text x="330" y="222" text-anchor="middle" fill="#ffffff" font-weight="600" font-size="12">City, 10:13</text>
+<text x="330" y="240" text-anchor="middle" fill="#9a9a9a">Today, +2 h</text>
+<text x="330" y="48" text-anchor="middle" fill="#cccccc">night</text>
+<rect x="439" y="54" width="186" height="181" rx="12" fill="#323232"/>
+<text x="453" y="100" fill="#ffffff" font-size="30" font-weight="300">07:30</text>
+<text x="453" y="124" fill="#ffffff">Alarm</text>
+<text x="453" y="140" fill="#9a9a9a">Repeat: Never</text>
+<text x="453" y="156" fill="#9a9a9a">Sound: Default</text>
+<rect x="543" y="189" width="68" height="30" rx="15" fill="#fd9435"/>
+<circle cx="596" cy="204" r="13" fill="#ffffff"/>
+<line x1="35" y1="304" x2="221" y2="304" stroke="#c0392b" marker-start="url(#a)" marker-end="url(#a)"/>
+<text x="128" y="318" text-anchor="middle" fill="#c0392b" font-size="10">186</text>
+<line x1="221" y1="304" x2="237" y2="304" stroke="#c0392b" marker-start="url(#a)" marker-end="url(#a)"/>
+<text x="229" y="318" text-anchor="middle" fill="#c0392b">16</text>
+<line x1="20" y1="30" x2="35" y2="30" stroke="#c0392b" marker-start="url(#a)" marker-end="url(#a)"/>
+<text x="27" y="26" text-anchor="middle" fill="#c0392b" font-size="10">15</text>
+<line x1="35" y1="30" x2="237" y2="30" stroke="#c0392b" marker-start="url(#a)" marker-end="url(#a)"/>
+<text x="136" y="26" text-anchor="middle" fill="#c0392b" font-size="10">pitch 202</text>
+<line x1="643" y1="54" x2="643" y2="276" stroke="#c0392b" marker-start="url(#a)" marker-end="url(#a)"/>
+<text x="647" y="170" text-anchor="start" fill="#c0392b" font-size="10">world 222</text>
+<line x1="431" y1="54" x2="431" y2="235" stroke="#c0392b" marker-start="url(#a)" marker-end="url(#a)"/>
+<text x="429" y="150" text-anchor="end" fill="#c0392b" font-size="10">181</text>
+<text x="128" y="342" text-anchor="middle" fill="#333">face 120, 20 below the card top</text>
+<text x="10" y="364" fill="#666">World cards 186 × 222 and alarm cards 186 × 181, fill #323232, radius ≈ 12, pitch 202 (CL-01). Day face white, night face black.</text>
+</svg>

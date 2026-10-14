@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 874 540" width="874" height="540" font-family="Helvetica, Arial, sans-serif" font-size="10">
+<title>Clock stopwatch: geometry in the default window, points</title>
+<defs><marker id="a" viewBox="0 0 6 6" refX="3" refY="3" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 6 3 0 6z" fill="#c0392b"/></marker></defs>
+<rect width="874" height="540" fill="#ffffff"/>
+<g transform="translate(60 30)">
+<rect width="614.4" height="460.8" rx="8" fill="#1e1e1e"/>
+<line x1="0" y1="31.2" x2="614.4" y2="31.2" stroke="#555" stroke-dasharray="3 3"/>
+<circle cx="15.6" cy="15.6" r="4.2" fill="#ff5f57"/>
+<circle cx="29.4" cy="15.6" r="4.2" fill="#febc2e"/>
+<circle cx="43.2" cy="15.6" r="4.2" fill="#28c840"/>
+<rect x="193.8" y="4.8" width="226.8" height="21.6" rx="10.8" fill="#3d3d3d"/>
+<rect x="309.6" y="7.2" width="52.2" height="16.8" rx="8.4" fill="#535353"/>
+<rect x="190.2" y="52.2" width="234.0" height="51.6" fill="none" stroke="#888" stroke-dasharray="3 3"/>
+<text x="307.2" y="99.0" text-anchor="middle" font-size="62.4" font-weight="200" fill="#ffffff">00:00.00</text>
+<line x1="211.2" y1="138.0" x2="403.2" y2="138.0" stroke="#343434"/>
+<line x1="211.2" y1="156.6" x2="403.2" y2="156.6" stroke="#343434"/>
+<line x1="211.2" y1="175.2" x2="403.2" y2="175.2" stroke="#343434"/>
+<line x1="211.2" y1="193.8" x2="403.2" y2="193.8" stroke="#343434"/>
+<line x1="211.2" y1="212.4" x2="403.2" y2="212.4" stroke="#343434"/>
+<rect x="211.2" y="120.0" width="192.0" height="93.0" fill="none" stroke="#888" stroke-dasharray="3 3"/>
+<text x="307.2" y="133.2" text-anchor="middle" fill="#9a9a9a">laps table (vertical position not measured)</text>
+<rect x="211.2" y="414.0" width="90.0" height="16.8" rx="8.4" fill="#262626"/>
+<rect x="313.2" y="414.0" width="90.0" height="16.8" rx="8.4" fill="#30d159"/>
+<text x="256.2" y="425.4" text-anchor="middle" fill="#5c5c5c">Lap</text>
+<text x="358.2" y="425.4" text-anchor="middle" fill="#ffffff">Start</text>
+</g>
+<line x1="60.0" y1="18" x2="674.4" y2="18" stroke="#c0392b" marker-start="url(#a)" marker-end="url(#a)"/>
+<text x="367.2" y="14" text-anchor="middle" fill="#c0392b" font-size="10">1024</text>
+<line x1="30" y1="30.0" x2="30" y2="490.8" stroke="#c0392b" marker-start="url(#a)" marker-end="url(#a)"/>
+<text x="26" y="260.4" text-anchor="end" fill="#c0392b" font-size="10">768</text>
+<line x1="48" y1="30.0" x2="48" y2="61.2" stroke="#c0392b" marker-start="url(#a)" marker-end="url(#a)"/>
+<text x="46" y="48.0" text-anchor="end" fill="#c0392b" font-size="10">52</text>
+<line x1="271.2" y1="504.8" x2="463.2" y2="504.8" stroke="#c0392b" marker-start="url(#a)" marker-end="url(#a)"/>
+<text x="367.2" y="518.8" text-anchor="middle" fill="#c0392b" font-size="10">table and buttons: x 352 to 672 (320)</text>
+<text x="686.4" y="45.6" fill="#333">switcher 378 × 36, pill 28</text>
+<text x="686.4" y="57.6" fill="#333">centred (no timer list yet)</text>
+<text x="686.4" y="96.0" fill="#333">digits 390 × 86, top y 87</text>
+<text x="686.4" y="108.0" fill="#333">thin, ≈ 104 pt type</text>
+<text x="686.4" y="186.0" fill="#333">rows ≈ 31, lines #343434</text>
+<text x="686.4" y="444.0" fill="#333">capsules 150 × 28 at y 690,</text>
+<text x="686.4" y="456.0" fill="#333">20 apart; Start #30d159,</text>
+<text x="686.4" y="468.0" fill="#333">Lap disabled #262626</text>
+<text x="10" y="532" fill="#666">Stopwatch section, default window 1024 × 768 (CL-01, CL-02). Drawn at 0.6 scale.</text>
+</svg>

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 230" width="640" height="230" font-family="Helvetica, Arial, sans-serif" font-size="10">
+<title>Clock: timer end and alarm firing timelines, milliseconds</title>
+<rect width="640" height="230" fill="#ffffff"/>
+<line x1="90.0" y1="190" x2="610.0" y2="190" stroke="#333"/>
+<line x1="90.0" y1="190" x2="90.0" y2="194" stroke="#333"/><text x="90.0" y="206" text-anchor="middle" fill="#333">0</text>
+<line x1="155.0" y1="190" x2="155.0" y2="194" stroke="#333"/><text x="155.0" y="206" text-anchor="middle" fill="#333">100</text>
+<line x1="220.0" y1="190" x2="220.0" y2="194" stroke="#333"/><text x="220.0" y="206" text-anchor="middle" fill="#333">200</text>
+<line x1="285.0" y1="190" x2="285.0" y2="194" stroke="#333"/><text x="285.0" y="206" text-anchor="middle" fill="#333">300</text>
+<line x1="350.0" y1="190" x2="350.0" y2="194" stroke="#333"/><text x="350.0" y="206" text-anchor="middle" fill="#333">400</text>
+<line x1="415.0" y1="190" x2="415.0" y2="194" stroke="#333"/><text x="415.0" y="206" text-anchor="middle" fill="#333">500</text>
+<line x1="480.0" y1="190" x2="480.0" y2="194" stroke="#333"/><text x="480.0" y="206" text-anchor="middle" fill="#333">600</text>
+<line x1="545.0" y1="190" x2="545.0" y2="194" stroke="#333"/><text x="545.0" y="206" text-anchor="middle" fill="#333">700</text>
+<line x1="610.0" y1="190" x2="610.0" y2="194" stroke="#333"/><text x="610.0" y="206" text-anchor="middle" fill="#333">800</text>
+<text x="10" y="64" fill="#333" font-weight="600">Timer end</text>
+<rect x="185.55" y="52" width="313.95" height="16" fill="#d6e4f5"/>
+<text x="342.525" y="64" text-anchor="middle" fill="#2c5a8a">banner slides in</text>
+<line x1="90.0" y1="46" x2="90.0" y2="74" stroke="#c0392b"/>
+<text x="90.0" y="42" text-anchor="middle" fill="#c0392b">picker reset</text>
+<line x1="185.55" y1="46" x2="185.55" y2="74" stroke="#c0392b"/>
+<text x="185.55" y="86" text-anchor="middle" fill="#c0392b">+147</text>
+<line x1="278.5" y1="46" x2="278.5" y2="74" stroke="#c0392b"/>
+<text x="278.5" y="42" text-anchor="middle" fill="#c0392b">sound +290</text>
+<line x1="499.5" y1="46" x2="499.5" y2="74" stroke="#c0392b"/>
+<text x="499.5" y="86" text-anchor="middle" fill="#c0392b">settled +630</text>
+<text x="10" y="144" fill="#333" font-weight="600">Alarm</text>
+<rect x="237.55" y="132" width="311.99999999999994" height="16" fill="#d6e4f5"/>
+<text x="393.54999999999995" y="144" text-anchor="middle" fill="#2c5a8a">banner slides in</text>
+<line x1="90.0" y1="126" x2="90.0" y2="154" stroke="#c0392b"/>
+<text x="90.0" y="122" text-anchor="middle" fill="#c0392b">minute</text>
+<line x1="98.45" y1="126" x2="98.45" y2="154" stroke="#c0392b"/>
+<text x="98.45" y="122" text-anchor="middle" fill="#c0392b"></text>
+<line x1="237.55" y1="126" x2="237.55" y2="154" stroke="#c0392b"/>
+<text x="237.55" y="166" text-anchor="middle" fill="#c0392b">+227</text>
+<line x1="342.85" y1="126" x2="342.85" y2="154" stroke="#c0392b"/>
+<text x="342.85" y="122" text-anchor="middle" fill="#c0392b">sound +389</text>
+<line x1="549.55" y1="126" x2="549.55" y2="154" stroke="#c0392b"/>
+<text x="549.55" y="166" text-anchor="middle" fill="#c0392b">settled +707</text>
+<text x="101.45" y="166" fill="#c0392b" text-anchor="start">switch off +13</text>
+<text x="10" y="224" fill="#666">t = 0: timer, the window returns to the picker; alarm, the system clock reaches the minute (CL-02).</text>
+</svg>
