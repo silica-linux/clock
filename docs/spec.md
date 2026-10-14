@@ -9,7 +9,7 @@ first translation. The wording is our own.
 
 ## Window
 
-- 1024 × 768 by default (CL-01). The toolbar is unified with the window: the section control
+- 1024 × 768 by default (CL-01), at least 690 × 640 (CL-13, `SilicaWindow.setSizeLimits`). The toolbar is unified with the window: the section control
   centered, a "+" at the right (inset 8).
 - **Section control**: 378 × 36, four segments (World, Alarms, Stopwatch, Timers); the
   pill slides to the chosen segment in 300 ms (ease-out cubic). With the timer list on screen
