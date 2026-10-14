@@ -49,7 +49,7 @@ class ClockToolbar extends StatelessWidget {
           final width = box.maxWidth;
           final controlWidth = ClockMetrics.controlWidth;
           final center = centerOffset(width);
-          final left = center - controlWidth / 2;
+          final left = center - controlWidth / 2 + ClockMetrics.controlShift;
           // The "+" ends 8 pt from the right edge (CL-01: centre at x 998 of 1024).
           const plusRight = 8.0;
           final plusLeft = width - plusRight - ClockMetrics.plusButton;

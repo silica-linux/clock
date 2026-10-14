@@ -197,9 +197,13 @@ class _PickerState extends State<_Picker> {
           children: [
             Text(
               units[i],
-              style: clockText(13, color: ClockColors.pickerUnits),
+              style: clockText(
+                13,
+                weight: FontWeight.w600,
+                color: ClockColors.pickerUnits,
+              ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 21),
             Container(
               padding: EdgeInsets.zero,
               decoration: BoxDecoration(
@@ -213,7 +217,7 @@ class _PickerState extends State<_Picker> {
                 style: thinDigits(
                   timerDigitSize,
                   color: ClockColors.pickerDigits,
-                ).copyWith(letterSpacing: -2.2),
+                ).copyWith(letterSpacing: -3.0),
               ),
             ),
           ],
@@ -227,7 +231,7 @@ class _PickerState extends State<_Picker> {
         style: thinDigits(
           timerDigitSize,
           color: ClockColors.pickerDigits,
-        ).copyWith(letterSpacing: -2.2),
+        ).copyWith(letterSpacing: -3.0),
       ),
     );
     return Focus(
@@ -237,31 +241,43 @@ class _PickerState extends State<_Picker> {
       onFocusChange: (_) => setState(() {}),
       child: Column(
         children: [
-          const Spacer(flex: 3),
+          const Spacer(flex: 17),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [part(0), colon, part(1), colon, part(2)],
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 12),
           ClockTextField(
             key: const ValueKey('timer label'),
             controller: widget.label,
             placeholder: l.timerLabel,
             width: 200,
+            height: 22,
+            bordered: false,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 5),
+          // The sound: a pop-up button with the only sound for now.
           Container(
             width: 200,
             height: 24,
-            alignment: Alignment.center,
+            padding: const EdgeInsets.only(left: 11, right: 6),
             decoration: BoxDecoration(
               color: ClockColors.button,
               borderRadius: BorderRadius.circular(6),
             ),
-            child: Text(l.defaultSound, style: clockText(13)),
+            child: Row(
+              children: [
+                Expanded(child: Text(l.defaultSound, style: clockText(13))),
+                const ClockSymbol(
+                  'chevron-up-down',
+                  size: 12,
+                  color: ClockColors.text,
+                ),
+              ],
+            ),
           ),
-          const Spacer(flex: 2),
+          const Spacer(flex: 13),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

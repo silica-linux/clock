@@ -189,13 +189,15 @@ class _RoundButtonState extends State<RoundButton> {
   );
 }
 
-/// The alarm switch: orange track and white knob when on, gray when off (CL-01).
+/// The alarm switch (CL-09): a 54 × 24 track, orange when on and gray when off, with a
+/// 32 × 20 capsule knob.
 class ClockSwitch extends StatelessWidget {
   const ClockSwitch({super.key, required this.value, required this.onChanged});
   final bool value;
   final ValueChanged<bool> onChanged;
 
-  static const Size size = Size(48, 28);
+  static const Size size = Size(54, 24);
+  static const Size knob = Size(32, 20);
 
   @override
   Widget build(BuildContext context) => GestureDetector(
@@ -211,11 +213,11 @@ class ClockSwitch extends StatelessWidget {
         borderRadius: BorderRadius.circular(size.height / 2),
       ),
       child: Container(
-        width: size.height - 4,
-        height: size.height - 4,
+        width: knob.width,
+        height: knob.height,
         decoration: BoxDecoration(
-          color: value ? ClockColors.text : ClockColors.switchKnobOff,
-          shape: BoxShape.circle,
+          color: value ? ClockColors.switchKnobOn : ClockColors.switchKnobOff,
+          borderRadius: BorderRadius.circular(knob.height / 2),
         ),
       ),
     ),
@@ -279,6 +281,7 @@ class ClockTextField extends StatefulWidget {
     this.onSubmitted,
     this.onChanged,
     this.leading,
+    this.bordered = true,
   });
 
   final TextEditingController controller;
@@ -289,6 +292,9 @@ class ClockTextField extends StatefulWidget {
   final ValueChanged<String>? onSubmitted;
   final ValueChanged<String>? onChanged;
   final Widget? leading;
+
+  /// False: plain text on the background, as the label of the timer picker (CL-05).
+  final bool bordered;
 
   @override
   State<ClockTextField> createState() => _ClockTextFieldState();
@@ -319,15 +325,19 @@ class _ClockTextFieldState extends State<ClockTextField> {
     child: Container(
       width: widget.width,
       height: widget.height,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.circular(widget.height / 2.6),
-        border: Border.all(
-          color: _focus.hasFocus ? ClockColors.orange : const Color(0xFF3D3D3D),
-          width: _focus.hasFocus ? 2 : 1,
-        ),
-      ),
+      padding: EdgeInsets.symmetric(horizontal: widget.bordered ? 8 : 11),
+      decoration: widget.bordered
+          ? BoxDecoration(
+              color: const Color(0xFF1E1E1E),
+              borderRadius: BorderRadius.circular(widget.height / 2.6),
+              border: Border.all(
+                color: _focus.hasFocus
+                    ? ClockColors.orange
+                    : const Color(0xFF3D3D3D),
+                width: _focus.hasFocus ? 2 : 1,
+              ),
+            )
+          : null,
       child: Row(
         children: [
           ?widget.leading,

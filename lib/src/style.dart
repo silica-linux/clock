@@ -10,6 +10,9 @@ abstract final class ClockColors {
   static const Color secondary = Color(0xFF8E8E93);
   static const Color dimmed = Color(0xFF6A6A6A);
 
+  /// The gray texts of an alarm card, and all of them when the alarm is off (CL-09).
+  static const Color alarmMinor = Color(0xFFA2A2A2);
+
   /// Segmented control: track, rim, pill (active / inactive window).
   static const Color track = Color(0xFF3D3D3D);
   static const Color rimTop = Color(0xFF727274);
@@ -34,7 +37,8 @@ abstract final class ClockColors {
   static const Color orange = Color(0xFFFF9230);
   static const Color green = Color(0xFF30D159);
   static const Color red = Color(0xFFFF4245);
-  static const Color switchOn = Color(0xFFFD9435);
+  static const Color switchOn = Color(0xFFF49C40);
+  static const Color switchKnobOn = Color(0xFFFEF0E3);
   static const Color switchOff = Color(0xFF454545);
   static const Color switchKnobOff = Color(0xFFE3E3E3);
   static const Color ringTrack = Color(0xFF3B3B3D);
@@ -53,6 +57,10 @@ abstract final class ClockMetrics {
   static const Size minWindow = Size(690, 640);
 
   static const double controlHeight = 36;
+
+  /// The control sits 3 pt right of the center of its area, with or without the timer list
+  /// (CL-01, CL-06: ink 327–702 and 487–862 at 1024 pt).
+  static const double controlShift = 3;
   static const List<double> segmentWidths = [95, 94, 95, 94];
   static double get controlWidth => segmentWidths.fold(0, (a, b) => a + b);
   static const double pillHeight = 28;
@@ -97,15 +105,18 @@ TextStyle clockText(
 );
 
 /// Thin digits (Inter variable at weight 200), tabular so the time does not dance.
-TextStyle thinDigits(double size, {Color color = ClockColors.text}) =>
-    TextStyle(
-      fontFamily: 'InterVariable',
-      fontSize: size,
-      color: color,
-      height: 1,
-      fontVariations: const [FontVariation('wght', 200)],
-      fontFeatures: const [FontFeature.tabularFigures()],
-    );
+TextStyle thinDigits(
+  double size, {
+  Color color = ClockColors.text,
+  double weight = 200,
+}) => TextStyle(
+  fontFamily: 'InterVariable',
+  fontSize: size,
+  color: color,
+  height: 1,
+  fontVariations: [FontVariation('wght', weight)],
+  fontFeatures: const [FontFeature.tabularFigures()],
+);
 
 /// Semibold tabular figures (lap times, card times).
 TextStyle tabular(

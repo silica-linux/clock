@@ -14,11 +14,11 @@ import 'widgets.dart';
 
 /// The thin digits: 74 pt tall in a 390 pt block (CL-01). Inter's figures are ~0.755 em tall
 /// and a little wider than the reference's, so the spacing is tightened.
-const double stopwatchDigitSize = 74 / 0.755;
-const double stopwatchDigitSpacing = -2.2;
+const double stopwatchDigitSize = 73 / 0.755;
+const double stopwatchDigitSpacing = -2.9;
 
 /// The distance from the top of the text box to the top of the digits at that size.
-const double _digitsInset = 11.5;
+const double _digitsInset = 6.4;
 
 class StopwatchView extends StatefulWidget {
   const StopwatchView({super.key, required this.controller});

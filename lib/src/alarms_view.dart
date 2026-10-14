@@ -123,7 +123,7 @@ class AlarmsViewState extends State<AlarmsView> {
           SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(
               ClockMetrics.cardsLeft,
-              toolbarHeight + 16,
+              toolbarHeight + 15,
               ClockMetrics.cardsLeft,
               20,
             ),
@@ -166,7 +166,8 @@ class AlarmsViewState extends State<AlarmsView> {
   }
 }
 
-/// An alarm card: time, label, repeat and sound; the switch on the right of the time.
+/// An alarm card (CL-09): the time, the label, the repeat and the sound one under the other,
+/// the switch below them; an alarm that is off turns all its texts gray.
 class AlarmCard extends StatelessWidget {
   const AlarmCard({super.key, required this.alarm, required this.onToggle});
   final Alarm alarm;
@@ -176,53 +177,62 @@ class AlarmCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final on = alarm.enabled;
-    final ink = on ? ClockColors.text : ClockColors.dimmed;
-    final minor = on ? ClockColors.secondary : ClockColors.dimmed;
+    final ink = on ? ClockColors.text : ClockColors.alarmMinor;
+    const minor = ClockColors.alarmMinor;
+    Widget line(double top, String text, TextStyle style) => Positioned(
+      left: 24,
+      right: 12,
+      top: top,
+      child: Text(
+        text,
+        maxLines: 1,
+        softWrap: false,
+        overflow: TextOverflow.ellipsis,
+        style: style,
+      ),
+    );
     return Container(
       width: ClockMetrics.alarmCard.width,
       height: ClockMetrics.alarmCard.height,
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: ClockColors.card,
         borderRadius: BorderRadius.circular(ClockMetrics.cardRadius),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(
-                  formatTime(context, alarm.hour, alarm.minute),
-                  style: thinDigits(40, color: ink),
-                ),
-              ),
-              ClockSwitch(
-                key: ValueKey('switch ${alarm.id}'),
-                value: on,
-                onChanged: (_) => onToggle(),
-              ),
-            ],
+          // Proportional figures: the time of a card does not change while it is shown.
+          line(
+            33,
+            formatTime(context, alarm.hour, alarm.minute),
+            thinDigits(
+              40,
+              color: ink,
+              weight: 300,
+            ).copyWith(fontFeatures: const []),
           ),
-          const Spacer(),
-          Text(
+          line(
+            72,
             alarm.label.isEmpty ? l.alarmDefaultLabel : alarm.label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: clockText(13, weight: FontWeight.w600, color: ink),
+            clockText(13, weight: FontWeight.w500, color: ink),
           ),
-          const SizedBox(height: 4),
-          Text(
+          line(
+            90,
             l.repeatSummary(repeatText(l, alarm.repeat)),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: clockText(12, color: minor),
+            clockText(12, color: minor),
           ),
-          Text(
+          line(
+            107,
             l.soundSummary(l.defaultSound),
-            maxLines: 1,
-            style: clockText(12, color: minor),
+            clockText(12, color: minor),
+          ),
+          Positioned(
+            left: 31,
+            top: 130,
+            child: ClockSwitch(
+              key: ValueKey('switch ${alarm.id}'),
+              value: on,
+              onChanged: (_) => onToggle(),
+            ),
           ),
         ],
       ),

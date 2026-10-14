@@ -97,7 +97,7 @@ void main() {
       find.byKey(const ValueKey('section control')),
     );
     expect(control.size, const Size(378, 36));
-    expect(control.center.dx, closeTo(512, 0.5));
+    expect(control.center.dx, closeTo(512 + 3, 0.5));
     expect(control.center.dy, closeTo(26, 0.5));
     await tester.tap(find.text('Stopwatch'));
     // The content changes at once, the pill reaches its place in ~300 ms.
@@ -162,6 +162,15 @@ void main() {
       find.byKey(ValueKey('alarm ${c.alarms.single.id}')),
     );
     expect(card, const Size(186, 181));
+    // CL-09: the switch (54 × 24) under the texts, 31 pt from the left of the card.
+    final cardRect = tester.getRect(
+      find.byKey(ValueKey('alarm ${c.alarms.single.id}')),
+    );
+    final switchRect = tester.getRect(
+      find.byKey(ValueKey('switch ${c.alarms.single.id}')),
+    );
+    expect(switchRect.size, const Size(54, 24));
+    expect(switchRect.topLeft - cardRect.topLeft, const Offset(31, 130));
     expect(find.text('Repeat: Weekends'), findsOneWidget);
     await tester.tap(find.byKey(ValueKey('switch ${c.alarms.single.id}')));
     await tester.pump(const Duration(milliseconds: 300));
@@ -187,7 +196,7 @@ void main() {
       final control = tester.getRect(
         find.byKey(const ValueKey('section control')),
       );
-      expect(control.center.dx, closeTo(320 + (1024 - 320) / 2, 0.5));
+      expect(control.center.dx, closeTo(320 + (1024 - 320) / 2 + 3, 0.5));
       await tester.tap(find.byKey(const ValueKey('timer cancel')));
       await tester.pump();
       expect(c.timers, isEmpty);
