@@ -97,6 +97,8 @@
   "@timerDone": {"description": "Notification when a timer ends"},
   "alarmRinging": "{label} · {time}",
   "@alarmRinging": {"description": "Notification body of a ringing alarm", "placeholders": {"label": {"type": "String"}, "time": {"type": "String"}}},
+  "restart": "Restart",
+  "@restart": {"description": "Notification action that runs an ended timer again"},
   "dismiss": "Stop",
   "@dismiss": {"description": "Action that stops a ringing alarm or timer"},
   "endsAt": "{time}",

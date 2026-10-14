@@ -406,38 +406,10 @@ class _AlarmEditorState extends State<AlarmEditor> {
             ),
             _row(
               l.snoozeLength,
-              Row(
-                children: [
-                  for (final m in const [5, 9, 10, 15])
-                    Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: GestureDetector(
-                        onTap: _snooze
-                            ? () => setState(() => _snoozeMinutes = m)
-                            : null,
-                        child: Container(
-                          height: 24,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: _snoozeMinutes == m && _snooze
-                                ? ClockColors.orange
-                                : ClockColors.button,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            l.minutes(m),
-                            style: clockText(
-                              12,
-                              color: _snooze
-                                  ? ClockColors.text
-                                  : ClockColors.dimmed,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
+              SnoozeLengthButton(
+                minutes: _snoozeMinutes,
+                enabled: _snooze,
+                onChanged: (m) => setState(() => _snoozeMinutes = m),
               ),
             ),
             const Spacer(),
@@ -589,6 +561,94 @@ class _TimeFieldState extends State<TimeField> {
           Text(':', style: thinDigits(40)),
           part(1, widget.minute),
         ],
+      ),
+    );
+  }
+}
+
+/// The snooze length: a pop-up button with 1 to 15 minutes, the current one checked.
+class SnoozeLengthButton extends StatefulWidget {
+  const SnoozeLengthButton({
+    super.key,
+    required this.minutes,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final int minutes;
+  final bool enabled;
+  final ValueChanged<int> onChanged;
+
+  @override
+  State<SnoozeLengthButton> createState() => _SnoozeLengthButtonState();
+}
+
+class _SnoozeLengthButtonState extends State<SnoozeLengthButton> {
+  OverlayEntry? _menu;
+
+  void _open() {
+    final box = context.findRenderObject();
+    final overlay = Overlay.maybeOf(context);
+    if (box is! RenderBox || overlay == null) return;
+    final l = AppLocalizations.of(context);
+    final at = box.localToGlobal(Offset(0, box.size.height + 4));
+    _menu = OverlayEntry(
+      builder: (_) => Positioned.fill(
+        child: MenuHost(
+          anchor: at,
+          opaque: true,
+          entries: [
+            for (var m = 1; m <= 15; m++)
+              MenuAction(
+                l.minutes(m),
+                checked: m == widget.minutes,
+                onSelected: () => widget.onChanged(m),
+              ),
+          ],
+          onDismissed: _close,
+        ),
+      ),
+    );
+    overlay.insert(_menu!);
+  }
+
+  void _close() {
+    _menu?.remove();
+    _menu = null;
+  }
+
+  @override
+  void dispose() {
+    _close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final color = widget.enabled ? ClockColors.text : ClockColors.dimmed;
+    return GestureDetector(
+      key: const ValueKey('snooze length'),
+      onTap: widget.enabled ? _open : null,
+      child: Container(
+        width: 120,
+        height: 24,
+        padding: const EdgeInsets.only(left: 8, right: 6),
+        decoration: BoxDecoration(
+          color: ClockColors.button,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                l.minutes(widget.minutes),
+                style: clockText(13, color: color),
+              ),
+            ),
+            Text('⌄', style: clockText(12, color: color)),
+          ],
+        ),
       ),
     );
   }

@@ -458,6 +458,12 @@ abstract class AppLocalizations {
   /// **'{label} · {time}'**
   String alarmRinging(String label, String time);
 
+  /// Notification action that runs an ended timer again
+  ///
+  /// In en, this message translates to:
+  /// **'Restart'**
+  String get restart;
+
   /// Action that stops a ringing alarm or timer
   ///
   /// In en, this message translates to:

@@ -211,6 +211,9 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
+  String get restart => 'Riavvia';
+
+  @override
   String get dismiss => 'Ferma';
 
   @override

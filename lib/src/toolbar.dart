@@ -81,6 +81,8 @@ class ClockToolbar extends StatelessWidget {
                     builder: (context) => RoundButton(
                       key: const ValueKey('add'),
                       symbol: 'plus',
+                      hoverFill: const Color(0xFF515152),
+                      actOnPress: true,
                       onPressed: () {
                         final box = context.findRenderObject();
                         if (box is! RenderBox) return;

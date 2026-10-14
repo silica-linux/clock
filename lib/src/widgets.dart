@@ -3,6 +3,7 @@
 
 import 'dart:io';
 
+import 'package:flutter/gestures.dart' show kPrimaryButton;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -52,7 +53,18 @@ class ClockSymbol extends StatelessWidget {
   }
 }
 
-/// A 150 × 28 capsule button (CL-01): filled, white label, pressed slightly darker.
+/// The pressed fill of a capsule (CL-02): green, red and gray as measured; other colors
+/// (orange) lighten the same way (*provisional*).
+Color pressedFill(Color color) => switch (color) {
+  ClockColors.green => const Color(0xFF4CD669),
+  ClockColors.red => const Color(0xFFFF5858),
+  ClockColors.button => const Color(0xFF434343),
+  _ => Color.lerp(color, const Color(0xFFFFFFFF), 0.1)!,
+};
+
+/// A 150 × 28 capsule button (CL-01, CL-02): filled, white label; no hover; pressed, the whole
+/// capsule takes the pressed fill in the first frame, without a fade, and the action fires on
+/// release.
 class CapsuleButton extends StatefulWidget {
   const CapsuleButton({
     super.key,
@@ -82,7 +94,7 @@ class _CapsuleButtonState extends State<CapsuleButton> {
     final fill = !enabled
         ? ClockColors.buttonDisabled
         : _pressed
-        ? Color.lerp(widget.color, const Color(0xFF000000), 0.15)!
+        ? pressedFill(widget.color)
         : widget.color;
     return GestureDetector(
       onTapDown: enabled ? (_) => setState(() => _pressed = true) : null,
@@ -118,14 +130,22 @@ class RoundButton extends StatefulWidget {
     required this.onPressed,
     this.size = 36,
     this.fill = ClockColors.track,
+    this.hoverFill,
     this.color = ClockColors.text,
+    this.actOnPress = false,
   });
 
   final String symbol;
   final VoidCallback? onPressed;
   final double size;
   final Color fill;
+
+  /// The fill under the pointer (the toolbar "+": `#515152`, CL-02); null: a light veil.
+  final Color? hoverFill;
   final Color color;
+
+  /// Acts on mouse down (the toolbar "+", CL-02) instead of on release.
+  final bool actOnPress;
 
   @override
   State<RoundButton> createState() => _RoundButtonState();
@@ -138,22 +158,31 @@ class _RoundButtonState extends State<RoundButton> {
   Widget build(BuildContext context) => MouseRegion(
     onEnter: (_) => setState(() => _hover = true),
     onExit: (_) => setState(() => _hover = false),
-    child: GestureDetector(
-      onTap: widget.onPressed,
-      child: Container(
-        width: widget.size,
-        height: widget.size,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: _hover
-              ? Color.alphaBlend(ClockColors.hover, widget.fill)
-              : widget.fill,
-          shape: BoxShape.circle,
-        ),
-        child: ClockSymbol(
-          widget.symbol,
-          size: widget.size * 0.5,
-          color: widget.color,
+    // On press the button acts on the pointer down itself, ahead of any gesture arena.
+    child: Listener(
+      onPointerDown: widget.actOnPress && widget.onPressed != null
+          ? (e) {
+              if (e.buttons == kPrimaryButton) widget.onPressed!();
+            }
+          : null,
+      child: GestureDetector(
+        onTap: widget.actOnPress ? null : widget.onPressed,
+        child: Container(
+          width: widget.size,
+          height: widget.size,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: _hover
+                ? widget.hoverFill ??
+                      Color.alphaBlend(ClockColors.hover, widget.fill)
+                : widget.fill,
+            shape: BoxShape.circle,
+          ),
+          child: ClockSymbol(
+            widget.symbol,
+            size: widget.size * 0.5,
+            color: widget.color,
+          ),
         ),
       ),
     ),

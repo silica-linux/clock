@@ -30,9 +30,12 @@ class ClockController extends ChangeNotifier {
     Notifier? notifier,
     Ringer? ringer,
     DateTime Function()? now,
+    MicrosClock? micros,
   }) : notifier = notifier ?? Notifier(),
        ringer = ringer ?? Ringer(),
-       _now = now ?? DateTime.now {
+       _now = now ?? DateTime.now,
+       _micros = micros,
+       stopwatch = StopwatchModel(clock: micros) {
     section = Section.values[settings.section];
     _lastCheck = _now();
   }
@@ -43,17 +46,20 @@ class ClockController extends ChangeNotifier {
   final Notifier notifier;
   final Ringer ringer;
   final DateTime Function() _now;
+  final MicrosClock? _micros;
 
   /// The texts for notifications, set by the app once it knows the locale.
   AppLocalizations? strings;
 
   late Section section;
-  final StopwatchModel stopwatch = StopwatchModel();
+  final StopwatchModel stopwatch;
   final List<RunningTimer> timers = [];
   int selectedTimer = 0;
   Timer? _ticker;
   late DateTime _lastCheck;
-  int? _ringingNotification;
+  Timer? _due;
+  final List<Timer> _pending = [];
+  final Set<int> _open = {};
   final Map<int, DateTime> _snoozed = {};
 
   DateTime now() => _now();
@@ -63,11 +69,23 @@ class ClockController extends ChangeNotifier {
       const Duration(milliseconds: 250),
       (_) => check(),
     );
+    _schedule();
+  }
+
+  /// Every change reschedules the precise wake-up for the next alarm, snooze or timer end.
+  @override
+  void notifyListeners() {
+    _schedule();
+    super.notifyListeners();
   }
 
   @override
   void dispose() {
     _ticker?.cancel();
+    _due?.cancel();
+    for (final t in _pending) {
+      t.cancel();
+    }
     ringer.stop();
     super.dispose();
   }
@@ -124,6 +142,7 @@ class ClockController extends ChangeNotifier {
   List<Alarm> get alarms => settings.alarms;
 
   void saveAlarm(Alarm alarm) {
+    if (!alarm.enabled) _snoozed.remove(alarm.id);
     final list = [...settings.alarms];
     final i = list.indexWhere((a) => a.id == alarm.id);
     i < 0 ? list.add(alarm) : list[i] = alarm;
@@ -135,6 +154,7 @@ class ClockController extends ChangeNotifier {
   }
 
   void deleteAlarm(int id) {
+    _snoozed.remove(id);
     settings
       ..alarms = [
         for (final a in settings.alarms)
@@ -168,7 +188,11 @@ class ClockController extends ChangeNotifier {
 
   void startTimer(Duration duration, {String label = ''}) {
     if (duration <= Duration.zero) return;
-    final timer = CountdownTimer(duration: duration, label: label)..start();
+    final timer = CountdownTimer(
+      duration: duration,
+      label: label,
+      clock: _micros,
+    )..start();
     timers.insert(0, RunningTimer(timer));
     selectedTimer = 0;
     settings
@@ -200,7 +224,40 @@ class ClockController extends ChangeNotifier {
 
   // Ringing.
 
-  /// Runs every 250 ms: finished timers and due alarms ring.
+  /// The ringing delays measured on the reference (CL-02): an alarm turns its switch off at
+  /// once, shows the notification after 227 ms and starts the sound after 389 ms; a timer
+  /// goes back to the picker, notifies after 147 ms and sounds after about 290 ms.
+  static const alarmNotifyDelay = Duration(milliseconds: 227);
+  static const alarmSoundDelay = Duration(milliseconds: 389);
+  static const timerNotifyDelay = Duration(milliseconds: 147);
+  static const timerSoundDelay = Duration(milliseconds: 290);
+
+  /// Arms one timer for the earliest alarm, snooze or timer end, so they ring on time and
+  /// not up to a poll interval late.
+  void _schedule() {
+    _due?.cancel();
+    _due = null;
+    if (_ticker == null) return;
+    final now = _now();
+    DateTime? next;
+    void consider(DateTime? at) {
+      if (at != null && (next == null || at.isBefore(next!))) next = at;
+    }
+
+    for (final a in alarms) {
+      consider(a.nextFire(now));
+    }
+    _snoozed.values.forEach(consider);
+    for (final t in timers) {
+      consider(t.timer.endsAt(now));
+    }
+    final at = next;
+    if (at == null) return;
+    final wait = at.difference(now);
+    _due = Timer(wait.isNegative ? Duration.zero : wait, check);
+  }
+
+  /// Runs every 250 ms and at each due time: finished timers and due alarms ring.
   void check() {
     final now = _now();
     var changed = stopwatch.running;
@@ -209,86 +266,125 @@ class ClockController extends ChangeNotifier {
       if (t.timer.finished) {
         timers.remove(t);
         selectedTimer = 0;
-        _ring(
-          summary: strings?.timerDone ?? 'Timer done',
-          body: t.timer.label.isEmpty
-              ? formatCountdown(t.timer.duration)
-              : t.timer.label,
-          snoozable: false,
-        );
+        _timerEnded(t.timer);
         changed = true;
       }
     }
     for (final alarm in dueAlarms(alarms, _lastCheck, now)) {
-      _fireAlarm(alarm, now);
+      _fireAlarm(alarm);
       changed = true;
     }
     for (final entry in [..._snoozed.entries]) {
       if (!entry.value.isAfter(now)) {
         _snoozed.remove(entry.key);
         final alarm = alarms.where((a) => a.id == entry.key).firstOrNull;
-        if (alarm != null) _fireAlarm(alarm, now, snoozed: true);
+        if (alarm != null) _fireAlarm(alarm);
+        changed = true;
       }
     }
     _lastCheck = now;
     if (changed) notifyListeners();
   }
 
-  void _fireAlarm(Alarm alarm, DateTime now, {bool snoozed = false}) {
-    // A one-off alarm turns itself off after ringing.
-    if (alarm.repeat.isEmpty && !snoozed) {
-      saveAlarm(alarm.copyWith(enabled: false));
-    }
-    final label = alarm.label.isEmpty
-        ? (strings?.alarmDefaultLabel ?? 'Alarm')
-        : alarm.label;
-    final time =
-        '${alarm.hour.toString().padLeft(2, '0')}:'
-        '${alarm.minute.toString().padLeft(2, '0')}';
+  void _fireAlarm(Alarm alarm) {
+    // A one-off alarm turns itself off as it rings; Snooze turns it back on.
+    if (alarm.repeat.isEmpty) saveAlarm(alarm.copyWith(enabled: false));
+    final s = strings;
     _ring(
-      summary: label,
-      body: strings?.alarmRinging(label, time) ?? '$label · $time',
-      snoozable: alarm.snooze,
-      onSnooze: () => _snoozed[alarm.id] = _now().add(
-        Duration(minutes: alarm.snoozeMinutes),
-      ),
+      body: alarm.label.isEmpty
+          ? (s?.alarmDefaultLabel ?? 'Alarm')
+          : alarm.label,
+      actions: [
+        'stop',
+        s?.dismiss ?? 'Stop',
+        if (alarm.snooze) ...['snooze', s?.snooze ?? 'Snooze'],
+      ],
+      notifyAfter: alarmNotifyDelay,
+      soundAfter: alarmSoundDelay,
+      onAction: (action) {
+        if (action != 'snooze') return;
+        final current = alarms.where((a) => a.id == alarm.id).firstOrNull;
+        if (current == null) return;
+        if (!current.enabled) saveAlarm(current.copyWith(enabled: true));
+        _snoozed[alarm.id] = _now().add(
+          Duration(minutes: current.snoozeMinutes),
+        );
+        notifyListeners();
+      },
     );
   }
 
-  void _ring({
-    required String summary,
-    required String body,
-    required bool snoozable,
-    VoidCallback? onSnooze,
-  }) {
-    ringer.start();
+  void _timerEnded(CountdownTimer timer) {
     final s = strings;
-    notifier
-        .show(
-          app: s?.appTitle ?? 'Clock',
-          summary: summary,
-          body: body,
-          actions: [
-            if (snoozable) ...['snooze', s?.snooze ?? 'Snooze'],
-            'stop',
-            s?.dismiss ?? 'Stop',
-          ],
-          onAction: (action) {
-            stopRinging();
-            if (action == 'snooze') onSnooze?.call();
-          },
-        )
-        .then((id) => _ringingNotification = id);
+    _ring(
+      body: timer.label.isEmpty ? (s?.timerDone ?? 'Timer done') : timer.label,
+      actions: [
+        'stop',
+        s?.dismiss ?? 'Stop',
+        'repeat',
+        s?.restart ?? 'Restart',
+      ],
+      notifyAfter: timerNotifyDelay,
+      soundAfter: timerSoundDelay,
+      onAction: (action) {
+        if (action == 'repeat') {
+          startTimer(timer.duration, label: timer.label);
+        }
+      },
+    );
+  }
+
+  void _later(Duration delay, VoidCallback action) {
+    late final Timer t;
+    t = Timer(delay, () {
+      _pending.remove(t);
+      action();
+    });
+    _pending.add(t);
+  }
+
+  void _ring({
+    required String body,
+    required List<String> actions,
+    required Duration notifyAfter,
+    required Duration soundAfter,
+    required void Function(String action) onAction,
+  }) {
+    _later(soundAfter, () {
+      ringer.start();
+      notifyListeners();
+    });
+    _later(notifyAfter, () {
+      notifier
+          .show(
+            app: strings?.appTitle ?? 'Clock',
+            summary: strings?.appTitle ?? 'Clock',
+            body: body,
+            actions: actions,
+            onAction: (action) {
+              stopRinging();
+              onAction(action);
+            },
+          )
+          .then((id) {
+            if (id != null) _open.add(id);
+          });
+    });
   }
 
   bool get ringing => ringer.ringing;
 
-  /// Stops the sound and closes the notification.
+  /// Stops the sound and closes the notifications.
   void stopRinging() {
+    for (final t in _pending) {
+      t.cancel();
+    }
+    _pending.clear();
     ringer.stop();
-    final id = _ringingNotification;
-    _ringingNotification = null;
-    if (id != null) notifier.close(id);
+    for (final id in [..._open]) {
+      notifier.close(id);
+    }
+    _open.clear();
     notifyListeners();
   }
 }

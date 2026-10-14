@@ -60,6 +60,7 @@
   "recents": "Recenti",
   "timerDone": "Timer finito",
   "alarmRinging": "{label} · {time}",
+  "restart": "Riavvia",
   "dismiss": "Ferma",
   "endsAt": "{time}"
 }
