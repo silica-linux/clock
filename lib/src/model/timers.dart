@@ -1,6 +1,6 @@
 // Timers: a countdown that can pause and resume, the recent timers and the presets.
 
-import 'stopwatch.dart' show Ticker, monotonicMicros;
+import 'stopwatch.dart' show MicrosClock, monotonicMicros;
 
 /// The presets of the "+" menu (minutes), CL-01.
 const List<int> timerPresetMinutes = [
@@ -19,12 +19,12 @@ const List<int> timerPresetMinutes = [
 ];
 
 class CountdownTimer {
-  CountdownTimer({required this.duration, this.label = '', Ticker? clock})
+  CountdownTimer({required this.duration, this.label = '', MicrosClock? clock})
     : _clock = clock ?? monotonicMicros;
 
   final Duration duration;
   final String label;
-  final Ticker _clock;
+  final MicrosClock _clock;
   int _spent = 0;
   int? _since;
 

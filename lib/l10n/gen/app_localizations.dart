@@ -103,6 +103,372 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clock'**
   String get appTitle;
+
+  /// Section with the clocks of other cities
+  ///
+  /// In en, this message translates to:
+  /// **'World'**
+  String get sectionWorld;
+
+  /// Section with the alarms
+  ///
+  /// In en, this message translates to:
+  /// **'Alarms'**
+  String get sectionAlarms;
+
+  /// Section with the stopwatch
+  ///
+  /// In en, this message translates to:
+  /// **'Stopwatch'**
+  String get sectionStopwatch;
+
+  /// Section with the countdown timers
+  ///
+  /// In en, this message translates to:
+  /// **'Timers'**
+  String get sectionTimers;
+
+  /// Decimal separator of the stopwatch hundredths
+  ///
+  /// In en, this message translates to:
+  /// **'.'**
+  String get decimalSeparator;
+
+  /// Tooltip of the + button in the toolbar
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get add;
+
+  /// Title of the sheet that adds a world clock
+  ///
+  /// In en, this message translates to:
+  /// **'Add a City'**
+  String get addCity;
+
+  /// Placeholder of the city search field
+  ///
+  /// In en, this message translates to:
+  /// **'Search for a city or country'**
+  String get searchCities;
+
+  /// City search without results
+  ///
+  /// In en, this message translates to:
+  /// **'No matching city'**
+  String get noResults;
+
+  /// Context menu of a world clock card
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Clock'**
+  String get removeClock;
+
+  /// City name and its time on a card
+  ///
+  /// In en, this message translates to:
+  /// **'{city}, {time}'**
+  String cityTime(String city, String time);
+
+  /// The city's date compared with ours
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get dayToday;
+
+  /// No description provided for @dayTomorrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Tomorrow'**
+  String get dayTomorrow;
+
+  /// No description provided for @dayYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get dayYesterday;
+
+  /// Day and offset from local time, e.g. Today, +1 h
+  ///
+  /// In en, this message translates to:
+  /// **'{day}, {offset} h'**
+  String hoursOffset(String day, String offset);
+
+  /// World section without cards
+  ///
+  /// In en, this message translates to:
+  /// **'Add a city to see its time'**
+  String get worldEmpty;
+
+  /// Empty state of the alarms
+  ///
+  /// In en, this message translates to:
+  /// **'No Alarms'**
+  String get noAlarms;
+
+  /// Title of the alarm editor
+  ///
+  /// In en, this message translates to:
+  /// **'New Alarm'**
+  String get newAlarm;
+
+  /// No description provided for @editAlarm.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Alarm'**
+  String get editAlarm;
+
+  /// Label of an alarm without one
+  ///
+  /// In en, this message translates to:
+  /// **'Alarm'**
+  String get alarmDefaultLabel;
+
+  /// Rows of the alarm editor
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat'**
+  String get repeat;
+
+  /// No description provided for @label.
+  ///
+  /// In en, this message translates to:
+  /// **'Label'**
+  String get label;
+
+  /// No description provided for @sound.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound'**
+  String get sound;
+
+  /// No description provided for @snooze.
+  ///
+  /// In en, this message translates to:
+  /// **'Snooze'**
+  String get snooze;
+
+  /// No description provided for @snoozeLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Snooze for'**
+  String get snoozeLength;
+
+  /// A duration in minutes
+  ///
+  /// In en, this message translates to:
+  /// **'{count} min'**
+  String minutes(int count);
+
+  /// A duration in hours
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 hour} other{{count} hours}}'**
+  String hours(int count);
+
+  /// The alarm and timer sound
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get defaultSound;
+
+  /// Repeat summaries
+  ///
+  /// In en, this message translates to:
+  /// **'Never'**
+  String get repeatNever;
+
+  /// No description provided for @repeatEveryDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Every day'**
+  String get repeatEveryDay;
+
+  /// No description provided for @repeatWeekdays.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekdays'**
+  String get repeatWeekdays;
+
+  /// No description provided for @repeatWeekends.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekends'**
+  String get repeatWeekends;
+
+  /// No description provided for @repeatSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat: {days}'**
+  String repeatSummary(String days);
+
+  /// No description provided for @soundSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound: {sound}'**
+  String soundSummary(String sound);
+
+  /// One letter per day, Monday first
+  ///
+  /// In en, this message translates to:
+  /// **'MTWTFSS'**
+  String get weekdayLetters;
+
+  /// Short day names, Monday first, comma separated
+  ///
+  /// In en, this message translates to:
+  /// **'Mon,Tue,Wed,Thu,Fri,Sat,Sun'**
+  String get weekdaysShort;
+
+  /// Buttons
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @deleteAlarm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Alarm'**
+  String get deleteAlarm;
+
+  /// No description provided for @toggleAlarm.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn Alarm On or Off'**
+  String get toggleAlarm;
+
+  /// Stopwatch and timer buttons
+  ///
+  /// In en, this message translates to:
+  /// **'Lap'**
+  String get lap;
+
+  /// No description provided for @reset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get reset;
+
+  /// No description provided for @start.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get start;
+
+  /// No description provided for @stop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get stop;
+
+  /// No description provided for @pause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get pause;
+
+  /// No description provided for @resume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get resume;
+
+  /// No description provided for @lapNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap {n}'**
+  String lapNumber(int n);
+
+  /// Headers of the laps table
+  ///
+  /// In en, this message translates to:
+  /// **'Lap'**
+  String get lapsHeaderLap;
+
+  /// No description provided for @lapsHeaderSplit.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap time'**
+  String get lapsHeaderSplit;
+
+  /// No description provided for @lapsHeaderTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get lapsHeaderTotal;
+
+  /// Labels above the timer picker
+  ///
+  /// In en, this message translates to:
+  /// **'h'**
+  String get unitHours;
+
+  /// No description provided for @unitMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'min'**
+  String get unitMinutes;
+
+  /// No description provided for @unitSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'sec'**
+  String get unitSeconds;
+
+  /// Placeholder of the timer label and default name
+  ///
+  /// In en, this message translates to:
+  /// **'Timer'**
+  String get timerLabel;
+
+  /// Submenu with ready-made timers
+  ///
+  /// In en, this message translates to:
+  /// **'Presets'**
+  String get presets;
+
+  /// Header of the recent timers
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get recents;
+
+  /// Notification when a timer ends
+  ///
+  /// In en, this message translates to:
+  /// **'Timer done'**
+  String get timerDone;
+
+  /// Notification body of a ringing alarm
+  ///
+  /// In en, this message translates to:
+  /// **'{label} · {time}'**
+  String alarmRinging(String label, String time);
+
+  /// Action that stops a ringing alarm or timer
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get dismiss;
+
+  /// End time of a running timer, next to a bell
+  ///
+  /// In en, this message translates to:
+  /// **'{time}'**
+  String endsAt(String time);
 }
 
 class _AppLocalizationsDelegate

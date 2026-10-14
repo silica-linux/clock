@@ -24,6 +24,8 @@ dev_dependencies:
 
 flutter:
   generate: true
+  assets:
+    - assets/map/land.json
   fonts:
     # Inter as a variable font: the thin digits of the stopwatch and the timer (weight 200),
     # which the static Regular and SemiBold of silica_ui cannot draw.

@@ -1,15 +1,15 @@
 // The stopwatch: elapsed time from a monotonic clock, laps, fastest and slowest lap.
 
 /// A monotonic clock in microseconds (tests pass their own).
-typedef Ticker = int Function();
+typedef MicrosClock = int Function();
 
 final Stopwatch _monotonic = Stopwatch()..start();
 int monotonicMicros() => _monotonic.elapsedMicroseconds;
 
 class StopwatchModel {
-  StopwatchModel({Ticker? clock}) : _clock = clock ?? monotonicMicros;
+  StopwatchModel({MicrosClock? clock}) : _clock = clock ?? monotonicMicros;
 
-  final Ticker _clock;
+  final MicrosClock _clock;
   int _accumulated = 0;
   int? _since;
 

@@ -89,16 +89,24 @@ List<City> parseCities(String zoneTab, Map<String, String> countries) {
   return cities;
 }
 
-/// The catalog from the system database directory; empty if the files are missing.
+/// The catalog from the system database directory: `zone.tab` (one line per country zone,
+/// links included: Reykjavík is there, while `zone1970.tab` merges it into Abidjan), completed
+/// by `zone1970.tab`; empty if the files are missing.
 List<City> loadCities({String directory = '/usr/share/zoneinfo'}) {
   try {
-    final zoneTab = File('$directory/zone1970.tab');
     final iso = File('$directory/iso3166.tab');
-    if (!zoneTab.existsSync()) return const [];
-    return parseCities(
-      zoneTab.readAsStringSync(),
-      iso.existsSync() ? parseCountries(iso.readAsStringSync()) : const {},
-    );
+    final countries = iso.existsSync()
+        ? parseCountries(iso.readAsStringSync())
+        : const <String, String>{};
+    final byZone = <String, City>{};
+    for (final name in ['zone1970.tab', 'zone.tab']) {
+      final file = File('$directory/$name');
+      if (!file.existsSync()) continue;
+      for (final city in parseCities(file.readAsStringSync(), countries)) {
+        byZone[city.zone] = city;
+      }
+    }
+    return byZone.values.toList()..sort((a, b) => a.name.compareTo(b.name));
   } on FileSystemException {
     return const [];
   }
