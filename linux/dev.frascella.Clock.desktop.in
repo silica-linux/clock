@@ -1,0 +1,17 @@
+[Desktop Entry]
+Type=Application
+Name=Clock
+Name[it]=Orologio
+GenericName=Clock
+GenericName[it]=Orologio
+Comment=World clock, alarms, stopwatch and timers
+Comment[it]=Ore del mondo, sveglie, cronometro e timer
+Exec=@EMBEDDER@ --size 1024x768 --title Clock --app-id dev.frascella.Clock @BUNDLE@
+Icon=preferences-system-time
+X-Silica-Icon=clock
+StartupWMClass=dev.frascella.Clock
+Categories=Utility;Clock;
+Keywords=time;alarm;stopwatch;timer;world;
+Keywords[it]=ora;sveglia;cronometro;timer;mondo;
+Terminal=false
+OnlyShowIn=Silica;
