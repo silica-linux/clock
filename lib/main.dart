@@ -18,6 +18,9 @@ void main() {
   SilicaWindow.setFullSizeContent(toolbarHeight).ignore();
   // The smallest window that still shows every section (CL-13); no maximum.
   SilicaWindow.setSizeLimits(min: ClockMetrics.minWindow).ignore();
+  // A single-window app: it quits with its window and comes back in the same place
+  // (APP-LC; Ossido remembers where the window was).
+  SilicaApp.quitWhenLastWindowCloses = true;
   final env = Platform.environment;
   final zones = ZoneDatabase();
   runApp(
