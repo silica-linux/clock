@@ -89,6 +89,29 @@ abstract final class ClockMetrics {
   static const double ringStroke = 6;
 }
 
+/// The card grid of the world clocks and the alarms (CLOCK-WORLD, #95, measured): 15 pt side
+/// margins and gaps, as many columns as fit with each card at least ~160 pt wide, the cards
+/// sharing the row (186 pt at 1024 pt, 210 at 690). The columns follow the window width, never
+/// the number of cards.
+class CardGrid {
+  const CardGrid(this.columns, this.cardWidth);
+
+  static const double gap = 15;
+
+  factory CardGrid.of(double width) {
+    const margin = ClockMetrics.cardsLeft;
+    final usable = width - 2 * margin;
+    var n = 1;
+    while ((usable - n * gap) / (n + 1) >= ClockMetrics.worldCardMinWidth) {
+      n++;
+    }
+    return CardGrid(n, (usable - (n - 1) * gap) / n);
+  }
+
+  final int columns;
+  final double cardWidth;
+}
+
 /// Text in Inter (silica_ui), white by default.
 TextStyle clockText(
   double size, {

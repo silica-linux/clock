@@ -120,28 +120,32 @@ class AlarmsViewState extends State<AlarmsView> {
             ),
           )
         else
-          SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(
-              ClockMetrics.cardsLeft,
-              toolbarHeight + 15,
-              ClockMetrics.cardsLeft,
-              20,
-            ),
-            child: Wrap(
-              spacing: ClockMetrics.cardPitch - ClockMetrics.alarmCard.width,
-              runSpacing: 16,
-              children: [
-                for (final alarm in alarms)
-                  GestureDetector(
-                    onTap: () => setState(() => _editing = alarm),
-                    onSecondaryTapUp: (d) => _openMenu(alarm, d.globalPosition),
-                    child: AlarmCard(
-                      key: ValueKey('alarm ${alarm.id}'),
-                      alarm: alarm,
-                      onToggle: () => widget.controller.toggleAlarm(alarm),
+          LayoutBuilder(
+            builder: (context, box) => SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(
+                ClockMetrics.cardsLeft,
+                toolbarHeight + 15,
+                ClockMetrics.cardsLeft,
+                20,
+              ),
+              child: Wrap(
+                spacing: CardGrid.gap,
+                runSpacing: CardGrid.gap,
+                children: [
+                  for (final alarm in alarms)
+                    GestureDetector(
+                      onTap: () => setState(() => _editing = alarm),
+                      onSecondaryTapUp: (d) =>
+                          _openMenu(alarm, d.globalPosition),
+                      child: AlarmCard(
+                        key: ValueKey('alarm ${alarm.id}'),
+                        alarm: alarm,
+                        width: CardGrid.of(box.maxWidth).cardWidth,
+                        onToggle: () => widget.controller.toggleAlarm(alarm),
+                      ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
         if (editing != null)
@@ -169,7 +173,13 @@ class AlarmsViewState extends State<AlarmsView> {
 /// An alarm card (CL-09): the time, the label, the repeat and the sound one under the other,
 /// the switch below them; an alarm that is off turns all its texts gray.
 class AlarmCard extends StatelessWidget {
-  const AlarmCard({super.key, required this.alarm, required this.onToggle});
+  const AlarmCard({
+    super.key,
+    required this.alarm,
+    required this.onToggle,
+    this.width = 186,
+  });
+  final double width;
   final Alarm alarm;
   final VoidCallback onToggle;
 
@@ -192,7 +202,7 @@ class AlarmCard extends StatelessWidget {
       ),
     );
     return Container(
-      width: ClockMetrics.alarmCard.width,
+      width: width,
       height: ClockMetrics.alarmCard.height,
       decoration: BoxDecoration(
         color: ClockColors.card,

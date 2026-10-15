@@ -158,7 +158,7 @@ void main() {
     final card = tester.getSize(
       find.byKey(ValueKey('alarm ${c.alarms.single.id}')),
     );
-    expect(card, const Size(186, 181));
+    expect(card, const Size(186.8, 181));
     // CL-09: the switch (54 × 24) under the texts, 31 pt from the left of the card.
     final cardRect = tester.getRect(
       find.byKey(ValueKey('alarm ${c.alarms.single.id}')),
@@ -224,7 +224,7 @@ void main() {
   );
 
   testWidgets(
-    'world: add a city from the sheet; the card fills the row, 222 tall',
+    'world: add a city from the sheet; a single card is one 186 × 222 slot',
     (tester) async {
       final c = await pump(tester);
       expect(c.section, Section.world);
@@ -239,7 +239,7 @@ void main() {
       expect(c.settings.cities, ['Asia/Tokyo']);
       expect(
         tester.getSize(find.byKey(const ValueKey('card Asia/Tokyo'))),
-        const Size(1024 - 30, 222),
+        const Size(186.8, 222),
       );
       await done(tester, c);
     },
@@ -459,6 +459,23 @@ void main() {
     },
   );
 
+  test('card grid: the columns and widths measured at each window width', () {
+    // clock.md, CLOCK-WORLD: window width -> (cards per row, card width).
+    const measured = {
+      1400: (7, 182.9),
+      1040: (5, 190.0),
+      900: (5, 162.0),
+      800: (4, 181.25),
+      690: (3, 210.0),
+    };
+    measured.forEach((width, expected) {
+      final grid = CardGrid.of(width.toDouble());
+      expect(grid.columns, expected.$1, reason: '$width');
+      expect(grid.cardWidth, closeTo(expected.$2, 0.1), reason: '$width');
+    });
+    expect(CardGrid.of(1024).cardWidth, closeTo(186.8, 0.01));
+  });
+
   testWidgets(
     'world: the map takes the full width and the content scrolls (#4)',
     (tester) async {
@@ -474,7 +491,7 @@ void main() {
       await tester.pump();
       expect(
         tester.getSize(find.byType(WorldCard).first),
-        const Size(327.5, 222),
+        const Size(640 / 3, 222),
       );
       expect(tester.getSize(map), const Size(700, 700 * 0.488));
       final top = tester.getTopLeft(map);

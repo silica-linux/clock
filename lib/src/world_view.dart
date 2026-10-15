@@ -1,5 +1,5 @@
 // The World section (CL-01): a map with the day/night line and a pin per city on top, a row
-// of 222 pt tall cards (full-width row, 15 pt margins) below, each with a 120 pt analog face (white by day,
+// of 222 pt tall cards in a grid (186 wide at 1024 pt, 15 pt margins and gaps) below, each with a 120 pt analog face (white by day,
 // black by night), the city and its time, the day and offset, sunrise and sunset.
 
 import 'dart:async';
@@ -104,20 +104,13 @@ class _WorldViewState extends State<WorldView> {
     ];
     // CLOCK-WORLD (#95, measured): the map has no fixed size, it takes the full width with
     // height 0.488 x width and never scrolls sideways; the map and the cards scroll together
-    // in one vertical view under the toolbar. The cards are 222 pt tall and fill the row
-    // (at least ~160 pt wide, 15 pt margins). provisional: the gap below the map.
+    // in one vertical view under the toolbar. The cards sit in a grid of fixed 222 pt height
+    // whose columns come from the window width, not from the number of cities (cardGrid): a
+    // single city is one card of one slot (186 pt at 1024 pt), never the whole row.
     return LayoutBuilder(
       builder: (context, box) {
         final width = box.maxWidth;
-        const margin = ClockMetrics.cardsLeft;
-        final count = cities.length;
-        final cardWidth = count == 0
-            ? 0.0
-            : math.max(
-                ClockMetrics.worldCardMinWidth,
-                (width - 2 * margin - (count - 1) * margin) / count,
-              );
-        final rowWidth = 2 * margin + count * cardWidth + (count - 1) * margin;
+        final grid = CardGrid.of(width);
         return SingleChildScrollView(
           key: const ValueKey('world scroll'),
           padding: const EdgeInsets.only(top: toolbarHeight),
@@ -137,46 +130,44 @@ class _WorldViewState extends State<WorldView> {
                 ),
               ),
               const SizedBox(height: ClockMetrics.worldMapGap),
-              SizedBox(
-                height: ClockMetrics.worldCardHeight,
-                child: cities.isEmpty
-                    ? Center(
-                        child: Text(
-                          AppLocalizations.of(context).worldEmpty,
-                          style: clockText(15, color: ClockColors.secondary),
-                        ),
-                      )
-                    : SingleChildScrollView(
-                        key: const ValueKey('world cards'),
-                        scrollDirection: Axis.horizontal,
-                        child: SizedBox(
-                          width: math.max(width, rowWidth),
-                          child: Row(
-                            children: [
-                              const SizedBox(width: margin),
-                              for (var i = 0; i < count; i++) ...[
-                                if (i > 0) const SizedBox(width: margin),
-                                GestureDetector(
-                                  onSecondaryTapUp: (d) =>
-                                      _openMenu(cities[i], d.globalPosition),
-                                  child: WorldCard(
-                                    key: ValueKey('card ${cities[i].zone}'),
-                                    city: cities[i],
-                                    zone:
-                                        c.zones.zone(cities[i].zone) ??
-                                        TimeZone.utc,
-                                    local: localZone,
-                                    now: now,
-                                    clock: c.now,
-                                    width: cardWidth,
-                                  ),
-                                ),
-                              ],
-                            ],
+              if (cities.isEmpty)
+                SizedBox(
+                  height: ClockMetrics.worldCardHeight,
+                  width: width,
+                  child: Center(
+                    child: Text(
+                      AppLocalizations.of(context).worldEmpty,
+                      style: clockText(15, color: ClockColors.secondary),
+                    ),
+                  ),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: ClockMetrics.cardsLeft,
+                  ),
+                  child: Wrap(
+                    key: const ValueKey('world cards'),
+                    spacing: CardGrid.gap,
+                    runSpacing: CardGrid.gap,
+                    children: [
+                      for (final city in cities)
+                        GestureDetector(
+                          onSecondaryTapUp: (d) =>
+                              _openMenu(city, d.globalPosition),
+                          child: WorldCard(
+                            key: ValueKey('card ${city.zone}'),
+                            city: city,
+                            zone: c.zones.zone(city.zone) ?? TimeZone.utc,
+                            local: localZone,
+                            now: now,
+                            clock: c.now,
+                            width: grid.cardWidth,
                           ),
                         ),
-                      ),
-              ),
+                    ],
+                  ),
+                ),
               const SizedBox(height: ClockMetrics.worldMapGap),
             ],
           ),
