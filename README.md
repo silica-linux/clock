@@ -18,8 +18,8 @@
   <img alt="status: planned" src="https://img.shields.io/badge/status-planned-8a8a8a?style=flat-square">
 </p>
 
-A Flutter app for the [Silica desktop](https://github.com/silica-linux/silica-desktop), built on
-[`silica_ui`](https://github.com/silica-linux/silica-ui) like [Mustache](https://github.com/silica-linux/mustache).
+A Flutter app for the [Silica desktop](https://github.com/silica-os/silica-desktop), built on
+[`silica_ui`](https://github.com/silica-os/silica-ui) like [Mustache](https://github.com/silica-os/mustache).
 App id `dev.frascella.Clock`, icon `clock` from silica-icons.
 
 Behaviors and measurements come from observations of macOS 27 in silica-reference (clean-room:

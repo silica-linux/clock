@@ -25,4 +25,4 @@ crash, everything is a command, measured parity, English everywhere). On top of 
   goes into `silica-ui`, not here.
 - Never crash: a missing time zone database, an unreadable settings file or a missing
   notification server are normal cases.
-- Issues and milestones: https://github.com/orgs/silica-linux/projects/1.
+- Issues and milestones: https://github.com/orgs/silica-os/projects/1.
