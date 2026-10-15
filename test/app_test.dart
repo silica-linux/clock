@@ -443,4 +443,27 @@ void main() {
     await tester.pump(HandStep.snap + const Duration(milliseconds: 1));
     expect(tester.hasRunningAnimations, isFalse);
   });
+
+  testWidgets('world: the map keeps its size and a small window scrolls (#4)', (
+    tester,
+  ) async {
+    final c = await pump(tester);
+    expect(c.section, Section.world);
+    final map = find.byKey(const ValueKey('world map'));
+    expect(tester.getSize(map), const Size(1024, 500));
+    await done(tester, c);
+
+    final small = await pump(tester, size: const Size(700, 600));
+    expect(tester.getSize(map), const Size(1024, 500));
+    final top = tester.getTopLeft(map);
+    // Scrolling moves the content, not the map's size.
+    await tester.drag(
+      find.byKey(const ValueKey('world scroll')),
+      const Offset(0, -100),
+    );
+    await tester.pump();
+    expect(tester.getSize(map), const Size(1024, 500));
+    expect(tester.getTopLeft(map).dy, lessThan(top.dy));
+    await done(tester, small);
+  });
 }

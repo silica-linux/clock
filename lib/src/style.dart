@@ -67,6 +67,11 @@ abstract final class ClockMetrics {
   static const Duration pillSlide = Duration(milliseconds: 300);
   static const double plusButton = 36;
 
+  /// The world map keeps this size (AX "Mappa del mondo", CL-01); the gap below it is
+  /// provisional (CLOCK-WORLD).
+  static const Size worldMap = Size(1024, 500);
+  static const double worldMapGap = 15;
+
   static const Size worldCard = Size(186, 222);
   static const Size alarmCard = Size(186, 181);
   static const double cardPitch = 202;

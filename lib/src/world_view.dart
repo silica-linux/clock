@@ -91,92 +91,85 @@ class _WorldViewState extends State<WorldView> {
     final now = c.now();
     final localZone =
         c.zones.zone(c.zones.localName() ?? 'UTC') ?? TimeZone.utc;
+    final pins = [
+      for (final city in cities)
+        (
+          city,
+          formatTime(
+            context,
+            c.timeIn(city.zone).hour,
+            c.timeIn(city.zone).minute,
+          ),
+        ),
+    ];
+    // The map keeps its size (CL-01: 1024 × 500) and the cards follow it; in a smaller window
+    // the whole content scrolls. provisional: CLOCK-WORLD has been requested (the map's top
+    // edge, the gap below it and the alignment in a wider window).
     return LayoutBuilder(
-      builder: (context, box) {
-        // CL-01 (1024 × 768): the map from below the toolbar to y 531, the cards from y 546
-        // to the bottom of the window.
-        const cardsBottom = 0.0;
-        const gap = 15.0;
-        final mapHeight = math.max(
-          0.0,
-          box.maxHeight -
-              toolbarHeight -
-              ClockMetrics.worldCard.height -
-              cardsBottom -
-              gap,
-        );
-        return Stack(
-          children: [
-            Positioned(
-              left: 0,
-              right: 0,
-              top: toolbarHeight,
-              height: mapHeight,
-              child: CustomPaint(
-                key: const ValueKey('world map'),
-                painter: WorldMapPainter(
-                  now: now,
-                  land: _landRings,
-                  pins: [
-                    for (final city in cities)
-                      (
-                        city,
-                        formatTime(
-                          context,
-                          c.timeIn(city.zone).hour,
-                          c.timeIn(city.zone).minute,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-            if (cities.isEmpty)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: cardsBottom + ClockMetrics.worldCard.height / 2,
-                child: Center(
-                  child: Text(
-                    AppLocalizations.of(context).worldEmpty,
-                    style: clockText(15, color: ClockColors.secondary),
+      builder: (context, box) => SingleChildScrollView(
+        key: const ValueKey('world scroll'),
+        padding: const EdgeInsets.only(top: toolbarHeight),
+        child: SingleChildScrollView(
+          key: const ValueKey('world scroll x'),
+          scrollDirection: Axis.horizontal,
+          child: SizedBox(
+            width: math.max(box.maxWidth, ClockMetrics.worldMap.width),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox.fromSize(
+                  size: ClockMetrics.worldMap,
+                  child: CustomPaint(
+                    key: const ValueKey('world map'),
+                    painter: WorldMapPainter(
+                      now: now,
+                      land: _landRings,
+                      pins: pins,
+                    ),
                   ),
                 ),
-              ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: cardsBottom,
-              height: ClockMetrics.worldCard.height,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.only(left: ClockMetrics.cardsLeft),
-                children: [
-                  for (final city in cities)
-                    Padding(
-                      padding: EdgeInsets.only(
-                        right:
-                            ClockMetrics.cardPitch -
-                            ClockMetrics.worldCard.width,
-                      ),
-                      child: GestureDetector(
-                        onSecondaryTapUp: (d) =>
-                            _openMenu(city, d.globalPosition),
-                        child: WorldCard(
-                          key: ValueKey('card ${city.zone}'),
-                          city: city,
-                          zone: c.zones.zone(city.zone) ?? TimeZone.utc,
-                          local: localZone,
-                          now: now,
+                const SizedBox(height: ClockMetrics.worldMapGap),
+                SizedBox(
+                  height: ClockMetrics.worldCard.height,
+                  child: cities.isEmpty
+                      ? Center(
+                          child: Text(
+                            AppLocalizations.of(context).worldEmpty,
+                            style: clockText(15, color: ClockColors.secondary),
+                          ),
+                        )
+                      : Row(
+                          children: [
+                            const SizedBox(width: ClockMetrics.cardsLeft),
+                            for (final city in cities)
+                              Padding(
+                                padding: EdgeInsets.only(
+                                  right:
+                                      ClockMetrics.cardPitch -
+                                      ClockMetrics.worldCard.width,
+                                ),
+                                child: GestureDetector(
+                                  onSecondaryTapUp: (d) =>
+                                      _openMenu(city, d.globalPosition),
+                                  child: WorldCard(
+                                    key: ValueKey('card ${city.zone}'),
+                                    city: city,
+                                    zone:
+                                        c.zones.zone(city.zone) ?? TimeZone.utc,
+                                    local: localZone,
+                                    now: now,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
-                      ),
-                    ),
-                ],
-              ),
+                ),
+                const SizedBox(height: ClockMetrics.worldMapGap),
+              ],
             ),
-          ],
-        );
-      },
+          ),
+        ),
+      ),
     );
   }
 }
