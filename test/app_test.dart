@@ -509,4 +509,40 @@ void main() {
       await done(tester, small);
     },
   );
+
+  testWidgets(
+    'always dark: the library resolves dark in a light system and Ossido is told',
+    (tester) async {
+      final window = <MethodCall>[];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SilicaWindow.channel, (call) async {
+            window.add(call);
+            return true;
+          });
+      addTearDown(
+        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(SilicaWindow.channel, null),
+      );
+      tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
+      addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+      final c = await pump(tester);
+      final context = tester.element(find.byType(ClockWindow));
+      expect(MediaQuery.platformBrightnessOf(context), Brightness.dark);
+      expect(SilicaAppearance.isDark(context), isTrue);
+      expect(identical(ToolbarColors.of(context), ToolbarColors.dark), isTrue);
+      expect(
+        identical(SegmentedColors.of(context), SegmentedColors.dark),
+        isTrue,
+      );
+      expect(
+        window
+            .where((call) => call.method == 'setAppearance')
+            .map((call) => call.arguments),
+        [
+          {'appearance': 'dark'},
+        ],
+      );
+      await done(tester, c);
+    },
+  );
 }

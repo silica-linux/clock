@@ -67,25 +67,31 @@ class _ClockAppState extends State<ClockApp> with WidgetsBindingObserver {
     super.dispose();
   }
 
+  /// The app is always dark, whatever the system appearance is (CL-01: the measured light and
+  /// dark captures are identical): the toolbar controls, menus and alerts of silica_ui and
+  /// the window buttons, bar and shadow Ossido draws take the dark look.
   @override
-  Widget build(BuildContext context) => Localizations(
-    locale: _locale,
-    delegates: const [
-      AppLocalizations.delegate,
-      GlobalWidgetsLocalizations.delegate,
-    ],
-    child: WindowActive(
-      active: _active,
-      child: DefaultTextEditingShortcuts(
-        child: ColoredBox(
-          color: ClockColors.background,
-          child: Overlay(
-            initialEntries: [
-              OverlayEntry(
-                builder: (context) =>
-                    ClockWindow(controller: widget.controller),
-              ),
-            ],
+  Widget build(BuildContext context) => SilicaAppearanceScope(
+    appearance: SilicaAppearance.dark,
+    child: Localizations(
+      locale: _locale,
+      delegates: const [
+        AppLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
+      child: WindowActive(
+        active: _active,
+        child: DefaultTextEditingShortcuts(
+          child: ColoredBox(
+            color: ClockColors.background,
+            child: Overlay(
+              initialEntries: [
+                OverlayEntry(
+                  builder: (context) =>
+                      ClockWindow(controller: widget.controller),
+                ),
+              ],
+            ),
           ),
         ),
       ),
