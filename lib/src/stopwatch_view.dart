@@ -30,6 +30,8 @@ class StopwatchView extends StatefulWidget {
 
 class _StopwatchViewState extends State<StopwatchView>
     with SingleTickerProviderStateMixin {
+  // The digits follow every frame while the stopwatch runs; at rest the ticker stops, so the
+  // app asks for no frames (#202).
   late final Ticker _ticker = createTicker((_) {
     if (widget.controller.stopwatch.running) setState(() {});
   });
@@ -37,11 +39,29 @@ class _StopwatchViewState extends State<StopwatchView>
   @override
   void initState() {
     super.initState();
-    _ticker.start();
+    widget.controller.addListener(_sync);
+    _sync();
+  }
+
+  @override
+  void didUpdateWidget(StopwatchView old) {
+    super.didUpdateWidget(old);
+    if (old.controller != widget.controller) {
+      old.controller.removeListener(_sync);
+      widget.controller.addListener(_sync);
+      _sync();
+    }
+  }
+
+  void _sync() {
+    final running = widget.controller.stopwatch.running;
+    if (running && !_ticker.isActive) _ticker.start();
+    if (!running && _ticker.isActive) _ticker.stop();
   }
 
   @override
   void dispose() {
+    widget.controller.removeListener(_sync);
     _ticker.dispose();
     super.dispose();
   }

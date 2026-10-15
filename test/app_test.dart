@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -444,12 +447,8 @@ void main() {
           ),
         ),
       );
-      CustomPaint paint() => tester.widget<CustomPaint>(
-        find.descendant(
-          of: find.byType(AnalogFace),
-          matching: find.byType(CustomPaint),
-        ),
-      );
+      CustomPaint paint() =>
+          tester.widget<CustomPaint>(find.byKey(const ValueKey('hands')));
       painters.add(paint().painter! as ClockFacePainter);
       t = t.add(const Duration(milliseconds: 100));
       await tester.pump(HandMotion.redraw);
@@ -458,6 +457,112 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     },
   );
+
+  testWidgets(
+    'a redraw of the hands repaints neither the dial nor the map (#202)',
+    (tester) async {
+      var t = DateTime(2026, 1, 1, 3, 20, 7);
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: SizedBox.square(
+            dimension: 120,
+            child: AnalogFace(time: t, day: true, now: t, clock: () => t),
+          ),
+        ),
+      );
+      final hands = tester.renderObject(find.byKey(const ValueKey('hands')));
+      final dial = tester.renderObject<RenderCustomPaint>(
+        find.byWidgetPredicate(
+          (w) => w is CustomPaint && w.painter is AnalogDialPainter,
+        ),
+      );
+      // The dial sits in its own layer, the hands in the face's: neither is the card's.
+      expect(dial.parent, isA<RenderRepaintBoundary>());
+      RenderObject? boundary = hands.parent;
+      while (boundary != null && !boundary.isRepaintBoundary) {
+        boundary = boundary.parent;
+      }
+      final face = tester.renderObject(
+        find
+            .descendant(
+              of: find.byType(AnalogFace),
+              matching: find.byType(RepaintBoundary),
+            )
+            .first,
+      );
+      expect(boundary, same(face));
+      t = t.add(HandMotion.redraw);
+      await tester.pump(HandMotion.redraw);
+      expect(dial.debugNeedsPaint, isFalse);
+      expect(
+        AnalogDialPainter(
+          day: true,
+        ).shouldRepaint(AnalogDialPainter(day: true)),
+        isFalse,
+      );
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  test('the map repaints when its time step, pins or land change (#202)', () {
+    final t = DateTime.utc(2026, 1, 1, 3, 20, 7, 500);
+    expect(WorldMapPainter.step(t), DateTime.utc(2026, 1, 1, 3, 20));
+    expect(
+      WorldMapPainter.step(t.add(const Duration(seconds: 2))),
+      WorldMapPainter.step(t),
+    );
+    // The view rebuilds at the next step: 2.5 s after 03:20:07.5, and a full step at a boundary.
+    expect(
+      WorldMapPainter.untilNextStep(t),
+      const Duration(milliseconds: 2500),
+    );
+    expect(
+      WorldMapPainter.untilNextStep(DateTime.utc(2026, 1, 1, 3, 20, 10)),
+      WorldMapPainter.timeStep,
+    );
+    WorldMapPainter map(DateTime now, String time) =>
+        WorldMapPainter(now: WorldMapPainter.step(now), pins: [(rome, time)]);
+    final first = map(t, '04:20');
+    expect(
+      map(t.add(const Duration(seconds: 1)), '04:20').shouldRepaint(first),
+      isFalse,
+    );
+    expect(
+      map(t.add(const Duration(seconds: 10)), '04:20').shouldRepaint(first),
+      isTrue,
+    );
+    expect(map(t, '04:21').shouldRepaint(first), isTrue);
+    expect(
+      WorldMapPainter(
+        now: first.now,
+        pins: first.pins,
+        land: [Float32List(2)],
+      ).shouldRepaint(first),
+      isTrue,
+    );
+  });
+
+  testWidgets('at rest the stopwatch and the timers ask for no frames (#202)', (
+    tester,
+  ) async {
+    final c = await pump(tester);
+    for (final section in [Section.stopwatch, Section.timers]) {
+      c.select(section);
+      await tester.pumpAndSettle();
+      expect(tester.binding.hasScheduledFrame, isFalse, reason: '$section');
+    }
+    c.select(Section.stopwatch);
+    await tester.pumpAndSettle();
+    c.stopwatchStartStop();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 16));
+    expect(tester.binding.hasScheduledFrame, isTrue);
+    c.stopwatchStartStop();
+    await tester.pumpAndSettle();
+    expect(tester.binding.hasScheduledFrame, isFalse);
+    await done(tester, c);
+  });
 
   test('card grid: the columns and widths measured at each window width', () {
     // clock.md, CLOCK-WORLD: window width -> (cards per row, card width).

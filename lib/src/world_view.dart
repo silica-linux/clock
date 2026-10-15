@@ -47,8 +47,17 @@ class _WorldViewState extends State<WorldView> {
     loadLand().then((rings) {
       if (mounted) setState(() => _landRings = rings);
     });
-    // The second hands move once a second.
-    _tick = Timer.periodic(const Duration(seconds: 1), (_) => setState(() {}));
+    _scheduleTick();
+  }
+
+  /// The view changes only at the map's time steps (the minute shown on the pins and cards is
+  /// one of them); the faces redraw on their own. One rebuild per step, not per second (#202).
+  void _scheduleTick() {
+    _tick = Timer(WorldMapPainter.untilNextStep(widget.controller.now()), () {
+      if (!mounted) return;
+      setState(() {});
+      _scheduleTick();
+    });
   }
 
   @override
@@ -117,15 +126,19 @@ class _WorldViewState extends State<WorldView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(
-                width: width,
-                height: width * ClockMetrics.worldMapRatio,
-                child: CustomPaint(
-                  key: const ValueKey('world map'),
-                  painter: WorldMapPainter(
-                    now: now,
-                    land: _landRings,
-                    pins: pins,
+              // Its own layer: the faces below redraw every 72 ms, the map only when its
+              // content changes (#202).
+              RepaintBoundary(
+                child: SizedBox(
+                  width: width,
+                  height: width * ClockMetrics.worldMapRatio,
+                  child: CustomPaint(
+                    key: const ValueKey('world map'),
+                    painter: WorldMapPainter(
+                      now: WorldMapPainter.step(now),
+                      land: _landRings,
+                      pins: pins,
+                    ),
                   ),
                 ),
               ),
@@ -360,22 +373,32 @@ class _AnalogFaceState extends State<AnalogFace> {
     final elapsed = clock == null || now == null
         ? Duration.zero
         : clock().difference(now);
-    return CustomPaint(
-      painter: ClockFacePainter(
-        seconds: HandMotion.position(widget.time, elapsed),
-        day: widget.day,
+    // The face in its own layer, and the dial in another below the hands: a redraw every
+    // 72 ms repaints only the hands, not the card, the map or the dial (#202).
+    return RepaintBoundary(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          RepaintBoundary(
+            child: CustomPaint(painter: AnalogDialPainter(day: widget.day)),
+          ),
+          CustomPaint(
+            key: const ValueKey('hands'),
+            painter: ClockFacePainter(
+              seconds: HandMotion.position(widget.time, elapsed),
+              day: widget.day,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-/// The analog face: white with black numerals and hands by day, the opposite by night; the
-/// second hand is thin and orange with an orange center dot.
-class ClockFacePainter extends CustomPainter {
-  ClockFacePainter({required this.seconds, required this.day});
+/// The dial of the analog face: white with black numerals by day, the opposite by night.
+class AnalogDialPainter extends CustomPainter {
+  AnalogDialPainter({required this.day});
 
-  /// The position within 12 hours, in seconds.
-  final double seconds;
   final bool day;
 
   @override
@@ -401,6 +424,26 @@ class ClockFacePainter extends CustomPainter {
       final p = c + Offset(math.cos(a), math.sin(a)) * (r * 0.78);
       tp.paint(canvas, p - Offset(tp.width / 2, tp.height / 2));
     }
+  }
+
+  @override
+  bool shouldRepaint(AnalogDialPainter old) => old.day != day;
+}
+
+/// The hands of the analog face, over [AnalogDialPainter]: black by day, white by night; the
+/// second hand is thin and orange with an orange center dot.
+class ClockFacePainter extends CustomPainter {
+  ClockFacePainter({required this.seconds, required this.day});
+
+  /// The position within 12 hours, in seconds.
+  final double seconds;
+  final bool day;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final r = size.shortestSide / 2;
+    final c = size.center(Offset.zero);
+    final ink = day ? const Color(0xFF000000) : const Color(0xFFFFFFFF);
     void hand(double fraction, double length, double width, Color color) {
       final a = fraction * 2 * math.pi - math.pi / 2;
       canvas.drawLine(
@@ -460,6 +503,27 @@ class WorldMapPainter extends CustomPainter {
   final DateTime now;
   final List<(City, String)> pins;
   final List<Float32List> land;
+
+  /// How often the day/night line moves: it shifts by about 0.1 px per 10 s at 1024 pt, so
+  /// a coarser [now] draws the same map without repainting it every second (#202).
+  static const Duration timeStep = Duration(seconds: 10);
+
+  /// [now] rounded down to [timeStep]: the time the map is drawn for.
+  static DateTime step(DateTime now) {
+    final micros = now.microsecondsSinceEpoch;
+    final unit = timeStep.inMicroseconds;
+    return DateTime.fromMicrosecondsSinceEpoch(
+      micros - micros % unit,
+      isUtc: now.isUtc,
+    );
+  }
+
+  /// From [now] to the next [timeStep] (never zero, so a timer does not spin).
+  static Duration untilNextStep(DateTime now) {
+    final unit = timeStep.inMicroseconds;
+    final left = unit - now.microsecondsSinceEpoch % unit;
+    return Duration(microseconds: left);
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -553,7 +617,25 @@ class WorldMapPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(WorldMapPainter old) => true;
+  bool shouldRepaint(WorldMapPainter old) =>
+      old.now != now ||
+      !identical(old.land, land) ||
+      !_samePins(old.pins, pins);
+
+  static bool _samePins(List<(City, String)> a, List<(City, String)> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      final (ca, ta) = a[i];
+      final (cb, tb) = b[i];
+      if (ta != tb ||
+          ca.name != cb.name ||
+          ca.latitude != cb.latitude ||
+          ca.longitude != cb.longitude) {
+        return false;
+      }
+    }
+    return true;
+  }
 }
 
 /// The sheet that adds a city: a 620 × 680 sheet with a round ×, a 604 × 36 search field with

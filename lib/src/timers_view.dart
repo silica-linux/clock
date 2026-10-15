@@ -44,11 +44,30 @@ class _TimersViewState extends State<TimersView>
   @override
   void initState() {
     super.initState();
-    _ticker.start();
+    widget.controller.addListener(_sync);
+    _sync();
+  }
+
+  @override
+  void didUpdateWidget(TimersView old) {
+    super.didUpdateWidget(old);
+    if (old.controller != widget.controller) {
+      old.controller.removeListener(_sync);
+      widget.controller.addListener(_sync);
+      _sync();
+    }
+  }
+
+  /// The ticker runs only while a timer does: at rest the app asks for no frames (#202).
+  void _sync() {
+    final running = widget.controller.timers.any((t) => t.timer.running);
+    if (running && !_ticker.isActive) _ticker.start();
+    if (!running && _ticker.isActive) _ticker.stop();
   }
 
   @override
   void dispose() {
+    widget.controller.removeListener(_sync);
     _ticker.dispose();
     _label.dispose();
     super.dispose();
