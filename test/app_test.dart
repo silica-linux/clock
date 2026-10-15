@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:silica_ui/silica_ui.dart';
 import 'package:silica_clock/src/app.dart';
 import 'package:silica_clock/src/controller.dart';
 import 'package:silica_clock/src/model/alarms.dart';
@@ -385,6 +386,26 @@ void main() {
       ),
       hasLength(1),
     );
+    await done(tester, c);
+  });
+
+  testWidgets('the toolbar "+" is the silica_ui glass icon button (#2)', (
+    tester,
+  ) async {
+    final c = await pump(tester);
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('add')),
+        matching: find.byType(ToolbarSegment),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('add')), findsOneWidget);
+    expect(
+      tester.widget(find.byKey(const ValueKey('add'))),
+      isA<ToolbarCapsule>(),
+    );
+    expect(find.byType(RoundButton), findsNothing);
     await done(tester, c);
   });
 }

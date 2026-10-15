@@ -50,8 +50,8 @@ class ClockToolbar extends StatelessWidget {
           final controlWidth = ClockMetrics.controlWidth;
           final center = centerOffset(width);
           final left = center - controlWidth / 2 + ClockMetrics.controlShift;
-          // The "+" ends 8 pt from the right edge (CL-01: centre at x 998 of 1024).
-          const plusRight = 8.0;
+          // The "+" ends 7 pt from the right edge (CL-01: centre at x 998 of 1024).
+          const plusRight = 7.0;
           final plusLeft = width - plusRight - ClockMetrics.plusButton;
           final fits =
               left >= windowButtonsEnd + 8 &&
@@ -78,20 +78,25 @@ class ClockToolbar extends StatelessWidget {
                   right: plusRight,
                   top: (toolbarHeight - ClockMetrics.plusButton) / 2,
                   child: Builder(
-                    builder: (context) => RoundButton(
+                    builder: (context) => ToolbarCapsule(
                       key: const ValueKey('add'),
-                      symbol: 'plus',
-                      hoverFill: const Color(0xFF515152),
-                      actOnPress: true,
-                      onPressed: () {
-                        final box = context.findRenderObject();
-                        if (box is! RenderBox) return;
-                        add(
-                          box.localToGlobal(
-                            Offset(box.size.width, box.size.height + 4),
-                          ),
-                        );
-                      },
+                      children: [
+                        ToolbarSegment(
+                          width: ClockMetrics.plusButton,
+                          // Acts on press, like a button with a menu (CL-02).
+                          onPress: () {
+                            final box = context.findRenderObject();
+                            if (box is! RenderBox) return;
+                            add(
+                              box.localToGlobal(
+                                Offset(box.size.width, box.size.height + 4),
+                              ),
+                            );
+                          },
+                          icon: (color) =>
+                              ClockSymbol('plus', size: 18, color: color),
+                        ),
+                      ],
                     ),
                   ),
                 ),
