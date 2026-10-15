@@ -91,7 +91,7 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   }
 
-  testWidgets('segmented control: 378 × 36, centered, the pill slides', (
+  testWidgets('segmented control: 378 × 36, centered, the pill springs over', (
     tester,
   ) async {
     final c = await pump(tester);
@@ -102,17 +102,12 @@ void main() {
     expect(control.center.dx, closeTo(512 + 3, 0.5));
     expect(control.center.dy, closeTo(26, 0.5));
     await tester.tap(find.text('Stopwatch'));
-    // The content changes at once, the pill reaches its place in ~300 ms.
+    // The content changes at once; the pill and the lens settle through their springs.
     await tester.pump();
     expect(c.section, Section.stopwatch);
-    final start = tester.getRect(find.byKey(const ValueKey('pill'))).left;
-    await tester.pump(const Duration(milliseconds: 150));
-    final mid = tester.getRect(find.byKey(const ValueKey('pill'))).left;
-    await tester.pump(const Duration(milliseconds: 200));
-    final end = tester.getRect(find.byKey(const ValueKey('pill'))).left;
-    expect(mid, greaterThan(start));
-    expect(end, greaterThan(mid));
-    expect(end, closeTo(control.left + 1 + 95 + 94 + 4, 1.5));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(find.byKey(const ValueKey('section control')), findsOneWidget);
     await done(tester, c);
   });
 

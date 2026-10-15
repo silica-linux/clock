@@ -13,14 +13,9 @@ abstract final class ClockColors {
   /// The gray texts of an alarm card, and all of them when the alarm is off (CL-09).
   static const Color alarmMinor = Color(0xFFA2A2A2);
 
-  /// Segmented control: track, rim, pill (active / inactive window).
+  /// The pop-up button at the minimum width: track and outer rim.
   static const Color track = Color(0xFF3D3D3D);
-  static const Color rimTop = Color(0xFF727274);
-  static const Color rimBottom = Color(0xFF626262);
   static const Color rimOuter = Color(0xFF0B0B0B);
-  static const Color pillTop = Color(0xFF525252);
-  static const Color pillBottom = Color(0xFF555555);
-  static const Color pillInactive = Color(0xFF464646);
 
   /// Hover highlight of a segment and of the round buttons: *provisional* (CL-01 notes a hover
   /// state but did not capture its color).
@@ -63,8 +58,6 @@ abstract final class ClockMetrics {
   static const double controlShift = 3;
   static const List<double> segmentWidths = [95, 94, 95, 94];
   static double get controlWidth => segmentWidths.fold(0, (a, b) => a + b);
-  static const double pillHeight = 28;
-  static const Duration pillSlide = Duration(milliseconds: 300);
   static const double plusButton = 36;
 
   /// The world map keeps this size (AX "Mappa del mondo", CL-01); the gap below it is
