@@ -1,5 +1,5 @@
 // The World section (CL-01): a map with the day/night line and a pin per city on top, a row
-// of 186 × 222 cards at a 202 pt pitch below, each with a 120 pt analog face (white by day,
+// of 222 pt tall cards (full-width row, 15 pt margins) below, each with a 120 pt analog face (white by day,
 // black by night), the city and its time, the day and offset, sunrise and sunset.
 
 import 'dart:async';
@@ -102,79 +102,91 @@ class _WorldViewState extends State<WorldView> {
           ),
         ),
     ];
-    // The map keeps its size (CL-01: 1024 × 500) and the cards follow it; in a smaller window
-    // the whole content scrolls. provisional: CLOCK-WORLD has been requested (the map's top
-    // edge, the gap below it and the alignment in a wider window).
+    // CLOCK-WORLD (#95, measured): the map has no fixed size, it takes the full width with
+    // height 0.488 x width and never scrolls sideways; the map and the cards scroll together
+    // in one vertical view under the toolbar. The cards are 222 pt tall and fill the row
+    // (at least ~160 pt wide, 15 pt margins). provisional: the gap below the map.
     return LayoutBuilder(
-      builder: (context, box) => SingleChildScrollView(
-        key: const ValueKey('world scroll'),
-        padding: const EdgeInsets.only(top: toolbarHeight),
-        child: SingleChildScrollView(
-          key: const ValueKey('world scroll x'),
-          scrollDirection: Axis.horizontal,
-          child: SizedBox(
-            width: math.max(box.maxWidth, ClockMetrics.worldMap.width),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox.fromSize(
-                  size: ClockMetrics.worldMap,
-                  child: CustomPaint(
-                    key: const ValueKey('world map'),
-                    painter: WorldMapPainter(
-                      now: now,
-                      land: _landRings,
-                      pins: pins,
-                    ),
+      builder: (context, box) {
+        final width = box.maxWidth;
+        const margin = ClockMetrics.cardsLeft;
+        final count = cities.length;
+        final cardWidth = count == 0
+            ? 0.0
+            : math.max(
+                ClockMetrics.worldCardMinWidth,
+                (width - 2 * margin - (count - 1) * margin) / count,
+              );
+        final rowWidth = 2 * margin + count * cardWidth + (count - 1) * margin;
+        return SingleChildScrollView(
+          key: const ValueKey('world scroll'),
+          padding: const EdgeInsets.only(top: toolbarHeight),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: width,
+                height: width * ClockMetrics.worldMapRatio,
+                child: CustomPaint(
+                  key: const ValueKey('world map'),
+                  painter: WorldMapPainter(
+                    now: now,
+                    land: _landRings,
+                    pins: pins,
                   ),
                 ),
-                const SizedBox(height: ClockMetrics.worldMapGap),
-                SizedBox(
-                  height: ClockMetrics.worldCard.height,
-                  child: cities.isEmpty
-                      ? Center(
-                          child: Text(
-                            AppLocalizations.of(context).worldEmpty,
-                            style: clockText(15, color: ClockColors.secondary),
-                          ),
-                        )
-                      : Row(
-                          children: [
-                            const SizedBox(width: ClockMetrics.cardsLeft),
-                            for (final city in cities)
-                              Padding(
-                                padding: EdgeInsets.only(
-                                  right:
-                                      ClockMetrics.cardPitch -
-                                      ClockMetrics.worldCard.width,
-                                ),
-                                child: GestureDetector(
+              ),
+              const SizedBox(height: ClockMetrics.worldMapGap),
+              SizedBox(
+                height: ClockMetrics.worldCardHeight,
+                child: cities.isEmpty
+                    ? Center(
+                        child: Text(
+                          AppLocalizations.of(context).worldEmpty,
+                          style: clockText(15, color: ClockColors.secondary),
+                        ),
+                      )
+                    : SingleChildScrollView(
+                        key: const ValueKey('world cards'),
+                        scrollDirection: Axis.horizontal,
+                        child: SizedBox(
+                          width: math.max(width, rowWidth),
+                          child: Row(
+                            children: [
+                              const SizedBox(width: margin),
+                              for (var i = 0; i < count; i++) ...[
+                                if (i > 0) const SizedBox(width: margin),
+                                GestureDetector(
                                   onSecondaryTapUp: (d) =>
-                                      _openMenu(city, d.globalPosition),
+                                      _openMenu(cities[i], d.globalPosition),
                                   child: WorldCard(
-                                    key: ValueKey('card ${city.zone}'),
-                                    city: city,
+                                    key: ValueKey('card ${cities[i].zone}'),
+                                    city: cities[i],
                                     zone:
-                                        c.zones.zone(city.zone) ?? TimeZone.utc,
+                                        c.zones.zone(cities[i].zone) ??
+                                        TimeZone.utc,
                                     local: localZone,
                                     now: now,
+                                    clock: c.now,
+                                    width: cardWidth,
                                   ),
                                 ),
-                              ),
-                          ],
+                              ],
+                            ],
+                          ),
                         ),
-                ),
-                const SizedBox(height: ClockMetrics.worldMapGap),
-              ],
-            ),
+                      ),
+              ),
+              const SizedBox(height: ClockMetrics.worldMapGap),
+            ],
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
 
-/// A world clock card: 186 × 222, `#323232`, radius 12, the face 20 pt from the top.
+/// A world clock card: 222 pt tall, `#323232`, radius 12, the face 20 pt from the top.
 class WorldCard extends StatelessWidget {
   const WorldCard({
     super.key,
@@ -182,12 +194,16 @@ class WorldCard extends StatelessWidget {
     required this.zone,
     required this.local,
     required this.now,
+    this.clock,
+    this.width = 186,
   });
 
   final City city;
   final TimeZone zone;
   final TimeZone local;
   final DateTime now;
+  final DateTime Function()? clock;
+  final double width;
 
   @override
   Widget build(BuildContext context) {
@@ -221,8 +237,8 @@ class WorldCard extends StatelessWidget {
     }
 
     return Container(
-      width: ClockMetrics.worldCard.width,
-      height: ClockMetrics.worldCard.height,
+      width: width,
+      height: ClockMetrics.worldCardHeight,
       decoration: BoxDecoration(
         color: ClockColors.card,
         borderRadius: BorderRadius.circular(ClockMetrics.cardRadius),
@@ -232,7 +248,12 @@ class WorldCard extends StatelessWidget {
           const SizedBox(height: ClockMetrics.faceTop),
           SizedBox.square(
             dimension: ClockMetrics.face,
-            child: AnalogFace(time: wall, day: daylight),
+            child: AnalogFace(
+              time: wall,
+              day: daylight,
+              now: now,
+              clock: clock,
+            ),
           ),
           const SizedBox(height: 18),
           Padding(
@@ -286,79 +307,85 @@ class WorldCard extends StatelessWidget {
   }
 }
 
-/// How the hands step. provisional: CLOCK-HANDS has been requested (silica-reference); until it
-/// is measured every hand jumps once a second, with a short snap that overshoots a little.
-abstract final class HandStep {
-  static const Duration snap = Duration(milliseconds: 120);
-  static const Curve curve = Curves.easeOutBack;
+/// How the hands move (CLOCK-HANDS, silica-reference #95, measured): never in steps, all three
+/// sweep continuously. macOS redraws the face about every 72 ms; the second hand advances
+/// ~0.45 degrees per redraw (5.99 degrees per second), without a snap or an overshoot.
+abstract final class HandMotion {
+  static const Duration redraw = Duration(milliseconds: 72);
 
-  /// The time in whole seconds within 12 hours: all the hands step with the second hand.
-  static int whole(DateTime t) =>
-      ((t.hour % 12) * 60 + t.minute) * 60 + t.second;
-
-  /// Where the hands are `progress` (0..1) into the snap from the previous step to [target].
-  static double position(int target, double progress) =>
-      target - 1 + curve.transform(progress.clamp(0.0, 1.0));
+  /// The position within 12 hours, in seconds, of the wall time [t] [elapsed] later.
+  static double position(DateTime t, Duration elapsed) =>
+      ((t.hour % 12) * 3600 +
+          t.minute * 60 +
+          t.second +
+          t.millisecond / 1000 +
+          t.microsecond / 1e6 +
+          elapsed.inMicroseconds / 1e6) %
+      43200;
 }
 
-/// The analog face of a card: [ClockFacePainter] with the hands stepping once a second.
+/// The analog face of a card: [ClockFacePainter] with all the hands sweeping continuously.
+/// [time] is the wall time at the instant [now]; the face then follows [clock].
 class AnalogFace extends StatefulWidget {
-  const AnalogFace({super.key, required this.time, required this.day});
+  const AnalogFace({
+    super.key,
+    required this.time,
+    required this.day,
+    this.now,
+    this.clock,
+  });
   final DateTime time;
   final bool day;
+  final DateTime? now;
+  final DateTime Function()? clock;
 
   @override
   State<AnalogFace> createState() => _AnalogFaceState();
 }
 
-class _AnalogFaceState extends State<AnalogFace>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _snap = AnimationController(
-    vsync: this,
-    duration: HandStep.snap,
-    value: 1,
-  );
+class _AnalogFaceState extends State<AnalogFace> {
+  Timer? _redraw;
 
   @override
-  void didUpdateWidget(AnalogFace old) {
-    super.didUpdateWidget(old);
-    if (HandStep.whole(old.time) != HandStep.whole(widget.time)) {
-      if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) {
-        _snap.value = 1;
-      } else {
-        _snap.forward(from: 0);
-      }
+  void initState() {
+    super.initState();
+    if (widget.clock != null) {
+      _redraw = Timer.periodic(HandMotion.redraw, (_) {
+        if (mounted) setState(() {});
+      });
     }
   }
 
   @override
   void dispose() {
-    _snap.dispose();
+    _redraw?.cancel();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) => AnimatedBuilder(
-    animation: _snap,
-    builder: (context, _) => CustomPaint(
+  Widget build(BuildContext context) {
+    final clock = widget.clock;
+    final now = widget.now;
+    final elapsed = clock == null || now == null
+        ? Duration.zero
+        : clock().difference(now);
+    return CustomPaint(
       painter: ClockFacePainter(
-        time: widget.time,
+        seconds: HandMotion.position(widget.time, elapsed),
         day: widget.day,
-        progress: _snap.value,
       ),
-    ),
-  );
+    );
+  }
 }
 
 /// The analog face: white with black numerals and hands by day, the opposite by night; the
 /// second hand is thin and orange with an orange center dot.
 class ClockFacePainter extends CustomPainter {
-  ClockFacePainter({required this.time, required this.day, this.progress = 1});
-  final DateTime time;
-  final bool day;
+  ClockFacePainter({required this.seconds, required this.day});
 
-  /// How far the snap to the current second has come (1: at rest).
-  final double progress;
+  /// The position within 12 hours, in seconds.
+  final double seconds;
+  final bool day;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -395,21 +422,19 @@ class ClockFacePainter extends CustomPainter {
       );
     }
 
-    // Stepped: the position is in whole seconds (provisional: CLOCK-HANDS).
-    final total = HandStep.position(HandStep.whole(time), progress);
-    final seconds = total % 60;
-    final minutes = total / 60 % 60;
-    final hours = total / 3600 % 12;
-    hand(hours / 12, r * 0.5, 4 * r / 60, ink);
-    hand(minutes / 60, r * 0.75, 4 * r / 60, ink);
+    final secondHand = seconds % 60;
+    final minuteHand = seconds / 60 % 60;
+    final hourHand = seconds / 3600 % 12;
+    hand(hourHand / 12, r * 0.5, 4 * r / 60, ink);
+    hand(minuteHand / 60, r * 0.75, 4 * r / 60, ink);
     canvas.drawCircle(c, 3.5 * r / 60, Paint()..color = ink);
-    hand(seconds / 60, r * 0.86, 1.2 * r / 60, ClockColors.orange);
+    hand(secondHand / 60, r * 0.86, 1.2 * r / 60, ClockColors.orange);
     canvas.drawCircle(c, 2.2 * r / 60, Paint()..color = ClockColors.orange);
   }
 
   @override
   bool shouldRepaint(ClockFacePainter old) =>
-      old.time != time || old.day != day || old.progress != progress;
+      old.seconds != seconds || old.day != day;
 }
 
 /// The land of the map (Natural Earth 1:110m, public domain): rings of longitude/latitude

@@ -223,26 +223,27 @@ void main() {
     },
   );
 
-  testWidgets('world: add a city from the sheet; the card is 186 × 222', (
-    tester,
-  ) async {
-    final c = await pump(tester);
-    expect(c.section, Section.world);
-    await tester.tap(find.byKey(const ValueKey('add')));
-    await tester.pump();
-    expect(find.text('Add a City'), findsOneWidget);
-    await tester.enterText(find.byType(EditableText), 'tok');
-    await tester.pump();
-    expect(find.text('Rome, Italy'), findsNothing);
-    await tester.tap(find.text('Tokyo, Japan'));
-    await tester.pump();
-    expect(c.settings.cities, ['Asia/Tokyo']);
-    expect(
-      tester.getSize(find.byKey(const ValueKey('card Asia/Tokyo'))),
-      const Size(186, 222),
-    );
-    await done(tester, c);
-  });
+  testWidgets(
+    'world: add a city from the sheet; the card fills the row, 222 tall',
+    (tester) async {
+      final c = await pump(tester);
+      expect(c.section, Section.world);
+      await tester.tap(find.byKey(const ValueKey('add')));
+      await tester.pump();
+      expect(find.text('Add a City'), findsOneWidget);
+      await tester.enterText(find.byType(EditableText), 'tok');
+      await tester.pump();
+      expect(find.text('Rome, Italy'), findsNothing);
+      await tester.tap(find.text('Tokyo, Japan'));
+      await tester.pump();
+      expect(c.settings.cities, ['Asia/Tokyo']);
+      expect(
+        tester.getSize(find.byKey(const ValueKey('card Asia/Tokyo'))),
+        const Size(1024 - 30, 222),
+      );
+      await done(tester, c);
+    },
+  );
 
   Iterable<MethodCall> notifies() => dbus.where(
     (m) => m.method == 'call' && (m.arguments as Map)['method'] == 'Notify',
@@ -405,60 +406,90 @@ void main() {
     await done(tester, c);
   });
 
-  test('the hands step once a second (#3, provisional CLOCK-HANDS)', () {
-    final a = DateTime(2026, 1, 1, 3, 20, 7, 0);
-    final b = DateTime(2026, 1, 1, 3, 20, 7, 900);
-    // Sub-second time does not move any hand.
-    expect(HandStep.whole(a), HandStep.whole(b));
+  test('the hands sweep continuously (#3, CLOCK-HANDS)', () {
+    final t = DateTime(2026, 1, 1, 3, 20, 7, 0);
+    final p0 = HandMotion.position(t, Duration.zero);
+    expect(p0, 3 * 3600 + 20 * 60 + 7);
+    // One redraw (72 ms) moves the second hand by ~0.43 degrees, no snap, no overshoot.
+    final p1 = HandMotion.position(t, HandMotion.redraw);
+    expect((p1 - p0) * 6, closeTo(0.432, 1e-9));
+    expect(HandMotion.position(t, const Duration(seconds: 1)) - p0, 1);
+    // Wraps at 12 hours.
     expect(
-      HandStep.whole(DateTime(2026, 1, 1, 15, 20, 8)),
-      HandStep.whole(a) + 1,
-    );
-    final n = HandStep.whole(a);
-    // The snap starts on the previous step and ends exactly on the new one.
-    expect(HandStep.position(n, 0), n - 1);
-    expect(HandStep.position(n, 1), n);
-  });
-
-  testWidgets('the face snaps once per second and then rests (#3)', (
-    tester,
-  ) async {
-    Widget face(int s) => Directionality(
-      textDirection: TextDirection.ltr,
-      child: SizedBox.square(
-        dimension: 120,
-        child: AnalogFace(time: DateTime(2026, 1, 1, 3, 20, s), day: true),
+      HandMotion.position(
+        DateTime(2026, 1, 1, 11, 59, 59),
+        const Duration(seconds: 2),
       ),
+      1,
     );
-    await tester.pumpWidget(face(7));
-    await tester.pumpWidget(face(7));
-    expect(tester.hasRunningAnimations, isFalse);
-    await tester.pumpWidget(face(8));
-    expect(tester.hasRunningAnimations, isTrue);
-    await tester.pump(HandStep.snap + const Duration(milliseconds: 1));
-    expect(tester.hasRunningAnimations, isFalse);
   });
 
-  testWidgets('world: the map keeps its size and a small window scrolls (#4)', (
-    tester,
-  ) async {
-    final c = await pump(tester);
-    expect(c.section, Section.world);
-    final map = find.byKey(const ValueKey('world map'));
-    expect(tester.getSize(map), const Size(1024, 500));
-    await done(tester, c);
+  testWidgets(
+    'the face redraws every 72 ms and the hands move between seconds',
+    (tester) async {
+      var t = DateTime(2026, 1, 1, 3, 20, 7);
+      final start = t;
+      final painters = <ClockFacePainter>[];
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: SizedBox.square(
+            dimension: 120,
+            child: AnalogFace(
+              time: start,
+              day: true,
+              now: start,
+              clock: () => t,
+            ),
+          ),
+        ),
+      );
+      CustomPaint paint() => tester.widget<CustomPaint>(
+        find.descendant(
+          of: find.byType(AnalogFace),
+          matching: find.byType(CustomPaint),
+        ),
+      );
+      painters.add(paint().painter! as ClockFacePainter);
+      t = t.add(const Duration(milliseconds: 100));
+      await tester.pump(HandMotion.redraw);
+      painters.add(paint().painter! as ClockFacePainter);
+      expect(painters[1].seconds - painters[0].seconds, closeTo(0.1, 1e-9));
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
 
-    final small = await pump(tester, size: const Size(700, 600));
-    expect(tester.getSize(map), const Size(1024, 500));
-    final top = tester.getTopLeft(map);
-    // Scrolling moves the content, not the map's size.
-    await tester.drag(
-      find.byKey(const ValueKey('world scroll')),
-      const Offset(0, -100),
-    );
-    await tester.pump();
-    expect(tester.getSize(map), const Size(1024, 500));
-    expect(tester.getTopLeft(map).dy, lessThan(top.dy));
-    await done(tester, small);
-  });
+  testWidgets(
+    'world: the map takes the full width and the content scrolls (#4)',
+    (tester) async {
+      final c = await pump(tester);
+      expect(c.section, Section.world);
+      final map = find.byKey(const ValueKey('world map'));
+      expect(tester.getSize(map), const Size(1024, 1024 * 0.488));
+      await done(tester, c);
+
+      final small = await pump(tester, size: const Size(700, 600));
+      small.settings.cities = ['Asia/Tokyo', 'Europe/Rome'];
+      small.notifyListeners();
+      await tester.pump();
+      expect(
+        tester.getSize(find.byType(WorldCard).first),
+        const Size(327.5, 222),
+      );
+      expect(tester.getSize(map), const Size(700, 700 * 0.488));
+      final top = tester.getTopLeft(map);
+      // Scrolling is vertical and moves the map and the cards together.
+      final card = tester.getTopLeft(find.byType(WorldCard).first);
+      await tester.drag(
+        find.byKey(const ValueKey('world scroll')),
+        const Offset(0, -30),
+      );
+      await tester.pump();
+      expect(tester.getSize(map), const Size(700, 700 * 0.488));
+      expect(tester.getTopLeft(map).dy, top.dy - 30);
+      expect(tester.getTopLeft(find.byType(WorldCard).first).dy, card.dy - 30);
+      expect(tester.getTopLeft(map).dx, 0);
+      await done(tester, small);
+    },
+  );
 }

@@ -60,12 +60,13 @@ abstract final class ClockMetrics {
   static double get controlWidth => segmentWidths.fold(0, (a, b) => a + b);
   static const double plusButton = 36;
 
-  /// The world map keeps this size (AX "Mappa del mondo", CL-01); the gap below it is
-  /// provisional (CLOCK-WORLD).
-  static const Size worldMap = Size(1024, 500);
+  /// The world map has no fixed size: full window width, height 0.488 x width (CLOCK-WORLD,
+  /// #95); the gap below it is provisional.
+  static const double worldMapRatio = 0.488;
   static const double worldMapGap = 15;
 
-  static const Size worldCard = Size(186, 222);
+  static const double worldCardHeight = 222;
+  static const double worldCardMinWidth = 160;
   static const Size alarmCard = Size(186, 181);
   static const double cardPitch = 202;
   static const double cardsLeft = 15;
