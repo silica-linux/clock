@@ -62,5 +62,16 @@
   "alarmRinging": "{label} · {time}",
   "restart": "Riavvia",
   "dismiss": "Ferma",
-  "endsAt": "{time}"
+  "endsAt": "{time}",
+  "menuFile": "File",
+  "menuEdit": "Modifica",
+  "menuView": "Vista",
+  "menuWindow": "Finestra",
+  "menuHelp": "Aiuto",
+  "startRecentTimer": "Avvia timer recente",
+  "noRecentTimers": "Nessun timer recente",
+  "closeAll": "Chiudi tutto",
+  "viewWorld": "Ore locali",
+  "stopwatchDigital": "Visualizza cronometro digitale",
+  "stopwatchAnalog": "Visualizza cronometro analogico"
 }

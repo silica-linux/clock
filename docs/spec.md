@@ -26,7 +26,23 @@ first translation. The wording is our own.
 | --- | --- |
 | World, Alarms, Stopwatch, Timers | ⌘1, ⌘2, ⌘3, ⌘4 |
 
+The ⌘ shortcuts are the menu bar's (`SilicaMenuBar` binds them while the app has the keyboard).
 The chosen section is remembered across launches.
+
+## Menus
+
+In Silica's menu bar (silica-ui `SilicaMenuBar`, silica-desktop#175), as measured (CL-01):
+
+- **Clock**: Services, Hide, Hide Others, Show All, Quit from the system. About is missing until
+  the app has an About window.
+- **File**: Start Recent Timer (a submenu with the recent timers, each starts that timer and
+  shows Timers; "No Recent Timers" disabled when there are none), Close (⌘W, the bar's), Close
+  All (disabled: one window).
+- **Edit**: Undo, Redo, Cut, Copy, Paste, Delete and Select All, all disabled (nothing to edit).
+- **View**: World Clock ⌘1, Alarms ⌘2, Stopwatch ⌘3, Timers ⌘4 (the current one checked); Show
+  Digital Stopwatch (checked) and Show Analog Stopwatch, both disabled until the analog
+  stopwatch exists.
+- **Window**, **Help**: the bar's standard items.
 
 ## World
 

@@ -102,5 +102,16 @@
   "dismiss": "Stop",
   "@dismiss": {"description": "Action that stops a ringing alarm or timer"},
   "endsAt": "{time}",
-  "@endsAt": {"description": "End time of a running timer, next to a bell", "placeholders": {"time": {"type": "String"}}}
+  "@endsAt": {"description": "End time of a running timer, next to a bell", "placeholders": {"time": {"type": "String"}}},
+  "menuFile": "File",
+  "menuEdit": "Edit",
+  "menuView": "View",
+  "menuWindow": "Window",
+  "menuHelp": "Help",
+  "startRecentTimer": "Start Recent Timer",
+  "noRecentTimers": "No Recent Timers",
+  "closeAll": "Close All",
+  "viewWorld": "World Clock",
+  "stopwatchDigital": "Show Digital Stopwatch",
+  "stopwatchAnalog": "Show Analog Stopwatch"
 }

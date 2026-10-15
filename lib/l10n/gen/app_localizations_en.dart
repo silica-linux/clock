@@ -220,4 +220,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String endsAt(String time) {
     return '$time';
   }
+
+  @override
+  String get menuFile => 'File';
+
+  @override
+  String get menuEdit => 'Edit';
+
+  @override
+  String get menuView => 'View';
+
+  @override
+  String get menuWindow => 'Window';
+
+  @override
+  String get menuHelp => 'Help';
+
+  @override
+  String get startRecentTimer => 'Start Recent Timer';
+
+  @override
+  String get noRecentTimers => 'No Recent Timers';
+
+  @override
+  String get closeAll => 'Close All';
+
+  @override
+  String get viewWorld => 'World Clock';
+
+  @override
+  String get stopwatchDigital => 'Show Digital Stopwatch';
+
+  @override
+  String get stopwatchAnalog => 'Show Analog Stopwatch';
 }

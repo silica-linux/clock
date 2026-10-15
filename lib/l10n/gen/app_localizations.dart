@@ -475,6 +475,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{time}'**
   String endsAt(String time);
+
+  /// No description provided for @menuFile.
+  ///
+  /// In en, this message translates to:
+  /// **'File'**
+  String get menuFile;
+
+  /// No description provided for @menuEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get menuEdit;
+
+  /// No description provided for @menuView.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get menuView;
+
+  /// No description provided for @menuWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Window'**
+  String get menuWindow;
+
+  /// No description provided for @menuHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Help'**
+  String get menuHelp;
+
+  /// No description provided for @startRecentTimer.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Recent Timer'**
+  String get startRecentTimer;
+
+  /// No description provided for @noRecentTimers.
+  ///
+  /// In en, this message translates to:
+  /// **'No Recent Timers'**
+  String get noRecentTimers;
+
+  /// No description provided for @closeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Close All'**
+  String get closeAll;
+
+  /// No description provided for @viewWorld.
+  ///
+  /// In en, this message translates to:
+  /// **'World Clock'**
+  String get viewWorld;
+
+  /// No description provided for @stopwatchDigital.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Digital Stopwatch'**
+  String get stopwatchDigital;
+
+  /// No description provided for @stopwatchAnalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Analog Stopwatch'**
+  String get stopwatchAnalog;
 }
 
 class _AppLocalizationsDelegate

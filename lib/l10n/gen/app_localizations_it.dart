@@ -220,4 +220,37 @@ class AppLocalizationsIt extends AppLocalizations {
   String endsAt(String time) {
     return '$time';
   }
+
+  @override
+  String get menuFile => 'File';
+
+  @override
+  String get menuEdit => 'Modifica';
+
+  @override
+  String get menuView => 'Vista';
+
+  @override
+  String get menuWindow => 'Finestra';
+
+  @override
+  String get menuHelp => 'Aiuto';
+
+  @override
+  String get startRecentTimer => 'Avvia timer recente';
+
+  @override
+  String get noRecentTimers => 'Nessun timer recente';
+
+  @override
+  String get closeAll => 'Chiudi tutto';
+
+  @override
+  String get viewWorld => 'Ore locali';
+
+  @override
+  String get stopwatchDigital => 'Visualizza cronometro digitale';
+
+  @override
+  String get stopwatchAnalog => 'Visualizza cronometro analogico';
 }

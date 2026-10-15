@@ -186,61 +186,128 @@ class _ClockWindowState extends State<ClockWindow> {
       Section.stopwatch => StopwatchView(controller: c),
       Section.timers => TimersView(controller: c),
     };
-    return Shortcuts(
-      shortcuts: {
-        for (final s in Section.values)
-          SingleActivator(
-            LogicalKeyboardKey(LogicalKeyboardKey.digit1.keyId + s.index),
-            meta: true,
-          ): _SectionIntent(
-            s,
-          ),
-      },
-      child: Actions(
-        actions: {
-          _SectionIntent: CallbackAction<_SectionIntent>(
-            onInvoke: (i) => c.select(i.section),
-          ),
-        },
-        child: Focus(
-          autofocus: true,
-          child: Stack(
-            children: [
-              Positioned.fill(child: section),
-              Positioned(
-                left: 0,
-                right: 0,
-                top: 0,
-                child: ClockToolbar(
-                  section: c.section,
-                  onSection: c.select,
-                  centerOffset: (width) => c.hasTimerList
-                      ? ClockMetrics.timerSidebar +
-                            (width - ClockMetrics.timerSidebar) / 2
-                      : width / 2,
-                  onAdd: c.section == Section.stopwatch ? null : _add,
+    // The ⌘ shortcuts (⌘1–⌘4 for the sections) are the menu bar's: SilicaMenuBar binds them.
+    return SilicaMenuBar(
+      menus: menus(AppLocalizations.of(context)),
+      child: Focus(
+        autofocus: true,
+        child: Stack(
+          children: [
+            Positioned.fill(child: section),
+            Positioned(
+              left: 0,
+              right: 0,
+              top: 0,
+              child: ClockToolbar(
+                section: c.section,
+                onSection: c.select,
+                centerOffset: (width) => c.hasTimerList
+                    ? ClockMetrics.timerSidebar +
+                          (width - ClockMetrics.timerSidebar) / 2
+                    : width / 2,
+                onAdd: c.section == Section.stopwatch ? null : _add,
+              ),
+            ),
+            if (_addingCity)
+              Positioned.fill(
+                child: AddCitySheet(
+                  cities: c.cities,
+                  onPick: (city) {
+                    c.addCity(city);
+                    setState(() => _addingCity = false);
+                  },
+                  onClose: () => setState(() => _addingCity = false),
                 ),
               ),
-              if (_addingCity)
-                Positioned.fill(
-                  child: AddCitySheet(
-                    cities: c.cities,
-                    onPick: (city) {
-                      c.addCity(city);
-                      setState(() => _addingCity = false);
-                    },
-                    onClose: () => setState(() => _addingCity = false),
-                  ),
-                ),
-            ],
-          ),
+          ],
         ),
       ),
     );
   }
-}
 
-class _SectionIntent extends Intent {
-  const _SectionIntent(this.section);
-  final Section section;
+  /// The menus in Silica's menu bar (silica-desktop#175): the app menu, File with the recent
+  /// timers and Close, Edit (every item disabled, as measured: the app has nothing to edit),
+  /// View with the four sections and the stopwatch style, Window and Help.
+  List<PlatformMenuItem> menus(AppLocalizations l) {
+    final recents = c.settings.recents;
+    final names = [
+      l.viewWorld,
+      l.sectionAlarms,
+      l.sectionStopwatch,
+      l.sectionTimers,
+    ];
+    return [
+      SilicaMenus.app(l.appTitle),
+      SilicaMenu(
+        label: l.menuFile,
+        menus: [
+          PlatformMenuItemGroup(
+            members: [
+              SilicaMenu(
+                label: l.startRecentTimer,
+                menus: [
+                  if (recents.isEmpty)
+                    SilicaMenuItem(label: l.noRecentTimers, enabled: false)
+                  else
+                    for (final r in recents)
+                      SilicaMenuItem(
+                        label: r.label.isEmpty
+                            ? formatCountdown(r.duration)
+                            : '${formatCountdown(r.duration)} · ${r.label}',
+                        onSelected: () {
+                          c.select(Section.timers);
+                          c.startTimer(r.duration, label: r.label);
+                        },
+                      ),
+                ],
+              ),
+            ],
+          ),
+          PlatformMenuItemGroup(
+            members: [
+              const SilicaMenuItem.system(SilicaMenuItemRole.close),
+              // One window: there is nothing more to close; the item stays, as measured.
+              SilicaMenuItem(label: l.closeAll, enabled: false),
+            ],
+          ),
+        ],
+      ),
+      SilicaMenus.edit(l.menuEdit),
+      SilicaMenu(
+        label: l.menuView,
+        menus: [
+          PlatformMenuItemGroup(
+            members: [
+              for (final s in Section.values)
+                SilicaMenuItem(
+                  label: names[s.index],
+                  checked: s == c.section,
+                  shortcut: SingleActivator(
+                    LogicalKeyboardKey(
+                      LogicalKeyboardKey.digit1.keyId + s.index,
+                    ),
+                    meta: true,
+                  ),
+                  onSelected: () => c.select(s),
+                ),
+            ],
+          ),
+          // The stopwatch is digital only for now: both styles are listed, as measured, but
+          // the analog one does not exist yet.
+          PlatformMenuItemGroup(
+            members: [
+              SilicaMenuItem(
+                label: l.stopwatchDigital,
+                checked: true,
+                enabled: false,
+              ),
+              SilicaMenuItem(label: l.stopwatchAnalog, enabled: false),
+            ],
+          ),
+        ],
+      ),
+      SilicaMenus.window(l.menuWindow),
+      SilicaMenus.help(l.menuHelp),
+    ];
+  }
 }
