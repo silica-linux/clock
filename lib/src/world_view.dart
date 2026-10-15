@@ -239,9 +239,7 @@ class WorldCard extends StatelessWidget {
           const SizedBox(height: ClockMetrics.faceTop),
           SizedBox.square(
             dimension: ClockMetrics.face,
-            child: CustomPaint(
-              painter: ClockFacePainter(time: wall, day: daylight),
-            ),
+            child: AnalogFace(time: wall, day: daylight),
           ),
           const SizedBox(height: 18),
           Padding(
@@ -295,12 +293,79 @@ class WorldCard extends StatelessWidget {
   }
 }
 
+/// How the hands step. provisional: CLOCK-HANDS has been requested (silica-reference); until it
+/// is measured every hand jumps once a second, with a short snap that overshoots a little.
+abstract final class HandStep {
+  static const Duration snap = Duration(milliseconds: 120);
+  static const Curve curve = Curves.easeOutBack;
+
+  /// The time in whole seconds within 12 hours: all the hands step with the second hand.
+  static int whole(DateTime t) =>
+      ((t.hour % 12) * 60 + t.minute) * 60 + t.second;
+
+  /// Where the hands are `progress` (0..1) into the snap from the previous step to [target].
+  static double position(int target, double progress) =>
+      target - 1 + curve.transform(progress.clamp(0.0, 1.0));
+}
+
+/// The analog face of a card: [ClockFacePainter] with the hands stepping once a second.
+class AnalogFace extends StatefulWidget {
+  const AnalogFace({super.key, required this.time, required this.day});
+  final DateTime time;
+  final bool day;
+
+  @override
+  State<AnalogFace> createState() => _AnalogFaceState();
+}
+
+class _AnalogFaceState extends State<AnalogFace>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _snap = AnimationController(
+    vsync: this,
+    duration: HandStep.snap,
+    value: 1,
+  );
+
+  @override
+  void didUpdateWidget(AnalogFace old) {
+    super.didUpdateWidget(old);
+    if (HandStep.whole(old.time) != HandStep.whole(widget.time)) {
+      if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) {
+        _snap.value = 1;
+      } else {
+        _snap.forward(from: 0);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _snap.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: _snap,
+    builder: (context, _) => CustomPaint(
+      painter: ClockFacePainter(
+        time: widget.time,
+        day: widget.day,
+        progress: _snap.value,
+      ),
+    ),
+  );
+}
+
 /// The analog face: white with black numerals and hands by day, the opposite by night; the
 /// second hand is thin and orange with an orange center dot.
 class ClockFacePainter extends CustomPainter {
-  ClockFacePainter({required this.time, required this.day});
+  ClockFacePainter({required this.time, required this.day, this.progress = 1});
   final DateTime time;
   final bool day;
+
+  /// How far the snap to the current second has come (1: at rest).
+  final double progress;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -337,9 +402,11 @@ class ClockFacePainter extends CustomPainter {
       );
     }
 
-    final seconds = time.second + time.millisecond / 1000;
-    final minutes = time.minute + seconds / 60;
-    final hours = (time.hour % 12) + minutes / 60;
+    // Stepped: the position is in whole seconds (provisional: CLOCK-HANDS).
+    final total = HandStep.position(HandStep.whole(time), progress);
+    final seconds = total % 60;
+    final minutes = total / 60 % 60;
+    final hours = total / 3600 % 12;
     hand(hours / 12, r * 0.5, 4 * r / 60, ink);
     hand(minutes / 60, r * 0.75, 4 * r / 60, ink);
     canvas.drawCircle(c, 3.5 * r / 60, Paint()..color = ink);
@@ -349,7 +416,7 @@ class ClockFacePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(ClockFacePainter old) =>
-      old.time != time || old.day != day;
+      old.time != time || old.day != day || old.progress != progress;
 }
 
 /// The land of the map (Natural Earth 1:110m, public domain): rings of longitude/latitude

@@ -8,6 +8,7 @@ import 'package:silica_clock/src/model/alarms.dart';
 import 'package:silica_clock/src/model/settings.dart';
 import 'package:silica_clock/src/style.dart';
 import 'package:silica_clock/src/system/notifier.dart';
+import 'package:silica_clock/src/world_view.dart';
 import 'package:silica_clock/src/widgets.dart';
 import 'package:silica_clock/src/time/cities.dart';
 import 'package:silica_clock/src/time/tzif.dart';
@@ -407,5 +408,39 @@ void main() {
     );
     expect(find.byType(RoundButton), findsNothing);
     await done(tester, c);
+  });
+
+  test('the hands step once a second (#3, provisional CLOCK-HANDS)', () {
+    final a = DateTime(2026, 1, 1, 3, 20, 7, 0);
+    final b = DateTime(2026, 1, 1, 3, 20, 7, 900);
+    // Sub-second time does not move any hand.
+    expect(HandStep.whole(a), HandStep.whole(b));
+    expect(
+      HandStep.whole(DateTime(2026, 1, 1, 15, 20, 8)),
+      HandStep.whole(a) + 1,
+    );
+    final n = HandStep.whole(a);
+    // The snap starts on the previous step and ends exactly on the new one.
+    expect(HandStep.position(n, 0), n - 1);
+    expect(HandStep.position(n, 1), n);
+  });
+
+  testWidgets('the face snaps once per second and then rests (#3)', (
+    tester,
+  ) async {
+    Widget face(int s) => Directionality(
+      textDirection: TextDirection.ltr,
+      child: SizedBox.square(
+        dimension: 120,
+        child: AnalogFace(time: DateTime(2026, 1, 1, 3, 20, s), day: true),
+      ),
+    );
+    await tester.pumpWidget(face(7));
+    await tester.pumpWidget(face(7));
+    expect(tester.hasRunningAnimations, isFalse);
+    await tester.pumpWidget(face(8));
+    expect(tester.hasRunningAnimations, isTrue);
+    await tester.pump(HandStep.snap + const Duration(milliseconds: 1));
+    expect(tester.hasRunningAnimations, isFalse);
   });
 }
