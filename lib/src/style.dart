@@ -57,6 +57,9 @@ abstract final class ClockMetrics {
   static const double worldMapRatio = 480 / 1024;
   static const double mapGap = 16;
 
+  /// Under the world cards (kit World: cards end at 768 in the 800 pt window).
+  static const double worldBottomMargin = 32;
+
   static const double worldCardHeight = 220;
   static const double worldCardMinWidth = 160;
   static const double alarmCardHeight = 180;

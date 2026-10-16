@@ -169,7 +169,8 @@ class _WorldViewState extends State<WorldView> {
                     ],
                   ),
                 ),
-              const SizedBox(height: ClockMetrics.cardsMargin),
+              // Kit Apps/Clock/World: the cards end at 768 of the 800 pt window.
+              const SizedBox(height: ClockMetrics.worldBottomMargin),
             ],
           ),
         );
