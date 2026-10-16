@@ -65,7 +65,7 @@ void main() {
   Future<ClockController> pump(
     WidgetTester tester, {
     Locale locale = const Locale('en'),
-    Size size = const Size(1024, 768),
+    Size size = const Size(1024, 800),
     FakeRinger? ringer,
     bool fakeClock = false,
   }) async {
@@ -94,25 +94,30 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   }
 
-  testWidgets('segmented control: 378 × 36, centered, the pill springs over', (
-    tester,
-  ) async {
-    final c = await pump(tester);
-    final control = tester.getRect(
-      find.byKey(const ValueKey('section control')),
-    );
-    expect(control.size, const Size(378, 36));
-    expect(control.center.dx, closeTo(512 + 3, 0.5));
-    expect(control.center.dy, closeTo(26, 0.5));
-    await tester.tap(find.text('Stopwatch'));
-    // The content changes at once; the pill and the lens settle through their springs.
-    await tester.pump();
-    expect(c.section, Section.stopwatch);
-    await tester.pump(const Duration(milliseconds: 100));
-    await tester.pump(const Duration(milliseconds: 600));
-    expect(find.byKey(const ValueKey('section control')), findsOneWidget);
-    await done(tester, c);
-  });
+  testWidgets(
+    'segmented control: kit Segmented Text piece, centred between spacers',
+    (tester) async {
+      final c = await pump(tester);
+      final control = tester.getRect(
+        find.byKey(const ValueKey('section control')),
+      );
+      // Kit `Apps/Clock/Toolbar`: the control is 360 × 32 at x 356, y 10 of the 52 pt bar.
+      expect(control, const Rect.fromLTWH(356, 10, 360, 32));
+      await tester.tap(find.text('Stopwatch'));
+      // The content changes at once; the lens and the thumb settle through their springs.
+      await tester.pump();
+      expect(c.section, Section.stopwatch);
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(find.byKey(const ValueKey('section control')), findsOneWidget);
+      // The stopwatch has no "+", and the control stays where it was.
+      expect(
+        tester.getRect(find.byKey(const ValueKey('section control'))),
+        control,
+      );
+      await done(tester, c);
+    },
+  );
 
   testWidgets('stopwatch: digits, start and laps, Italian comma', (
     tester,
@@ -126,9 +131,12 @@ void main() {
       tester.getRect(find.byKey(const ValueKey('lap reset'))),
       tester.getRect(find.byKey(const ValueKey('start stop'))),
     ];
-    expect(buttons[0].size, const Size(150, 28));
-    expect(buttons[1].left - buttons[0].right, 20);
-    expect(buttons[1].top, 690);
+    // Kit `Stopwatch`: Lap and Start are 68 × 28, 96 apart, 68 pt above the window's bottom.
+    expect(buttons[0].size, const Size(68, 28));
+    expect(buttons[1].size, const Size(68, 28));
+    expect(buttons[1].left - buttons[0].right, 96);
+    expect(buttons[1].top, 704);
+    expect(buttons[0].center.dx + buttons[1].center.dx, 1024);
     await tester.tap(find.text('Avvia'));
     await tester.pump(const Duration(milliseconds: 50));
     expect(find.text('Ferma'), findsOneWidget);
@@ -147,10 +155,10 @@ void main() {
     final c = await pump(tester);
     c.select(Section.alarms);
     await tester.pump();
-    expect(find.text('No Alarms'), findsOneWidget);
+    expect(find.text('No alarms'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('add')));
     await tester.pump();
-    expect(find.text('New Alarm'), findsOneWidget);
+    expect(find.text('New alarm'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('day 6')));
     await tester.tap(find.byKey(const ValueKey('day 7')));
     await tester.pump();
@@ -161,17 +169,17 @@ void main() {
     final card = tester.getSize(
       find.byKey(ValueKey('alarm ${c.alarms.single.id}')),
     );
-    expect(card, const Size(186.8, 181));
-    // CL-09: the switch (54 × 24) under the texts, 31 pt from the left of the card.
+    expect(card, const Size(184, 180));
+    // Kit `Alarm Card On`: the switch (40 × 24) at 128, 136 of the 184 × 180 card.
     final cardRect = tester.getRect(
       find.byKey(ValueKey('alarm ${c.alarms.single.id}')),
     );
     final switchRect = tester.getRect(
       find.byKey(ValueKey('switch ${c.alarms.single.id}')),
     );
-    expect(switchRect.size, const Size(54, 24));
-    expect(switchRect.topLeft - cardRect.topLeft, const Offset(31, 130));
-    expect(find.text('Repeat: Weekends'), findsOneWidget);
+    expect(switchRect.size, const Size(40, 24));
+    expect(switchRect.topLeft - cardRect.topLeft, const Offset(128, 136));
+    expect(find.text('Weekends'), findsOneWidget);
     await tester.tap(find.byKey(ValueKey('switch ${c.alarms.single.id}')));
     await tester.pump(const Duration(milliseconds: 300));
     expect(c.alarms.single.enabled, isFalse);
@@ -179,7 +187,7 @@ void main() {
   });
 
   testWidgets(
-    'timers: picker, running ring, list, control centered on the rest',
+    'timers: picker, running ring and list; the section control does not move',
     (tester) async {
       final ringer = FakeRinger();
       final c = await pump(tester, ringer: ringer);
@@ -196,7 +204,13 @@ void main() {
       final control = tester.getRect(
         find.byKey(const ValueKey('section control')),
       );
-      expect(control.center.dx, closeTo(320 + (1024 - 320) / 2 + 3, 0.5));
+      // Kit: the toolbar is the same with or without the list.
+      expect(control, const Rect.fromLTWH(356, 10, 360, 32));
+      // The ring centres on the area right of the 320 pt list.
+      expect(
+        tester.getCenter(find.byKey(const ValueKey('timer ring'))).dx,
+        closeTo(672, 0.5),
+      );
       await tester.tap(find.byKey(const ValueKey('timer cancel')));
       await tester.pump();
       expect(c.timers, isEmpty);
@@ -213,21 +227,23 @@ void main() {
     },
   );
 
-  testWidgets(
-    'at the minimum width with the timer list the control becomes a pop-up',
-    (tester) async {
-      final c = await pump(tester, size: const Size(690, 640));
-      expect(find.byKey(const ValueKey('section control')), findsOneWidget);
-      c.startTimer(const Duration(minutes: 5));
-      await tester.pump();
-      expect(find.byKey(const ValueKey('section control')), findsNothing);
-      expect(find.byKey(const ValueKey('section popup')), findsOneWidget);
-      await done(tester, c);
-    },
-  );
+  testWidgets('at the minimum width the section control still fits', (
+    tester,
+  ) async {
+    final c = await pump(tester, size: const Size(690, 640));
+    c.startTimer(const Duration(minutes: 5));
+    await tester.pump();
+    final control = tester.getRect(
+      find.byKey(const ValueKey('section control')),
+    );
+    // Between the 96 pt window-button slot and the 44 pt "+" piece.
+    expect(control.left, greaterThanOrEqualTo(100));
+    expect(control.right, lessThanOrEqualTo(690 - 8 - 44));
+    await done(tester, c);
+  });
 
   testWidgets(
-    'world: add a city from the sheet; a single card is one 186 × 222 slot',
+    'world: add a city from the sheet; a single card is one 184 × 220 slot',
     (tester) async {
       final c = await pump(tester);
       expect(c.section, Section.world);
@@ -242,7 +258,7 @@ void main() {
       expect(c.settings.cities, ['Asia/Tokyo']);
       expect(
         tester.getSize(find.byKey(const ValueKey('card Asia/Tokyo'))),
-        const Size(186.8, 222),
+        const Size(184, 220),
       );
       await done(tester, c);
     },
@@ -253,21 +269,26 @@ void main() {
   );
 
   Color fillOf(WidgetTester tester, Key key) {
-    final box = tester.widget<Container>(
-      find.descendant(of: find.byKey(key), matching: find.byType(Container)),
-    );
-    return (box.decoration! as BoxDecoration).color!;
+    final box = tester
+        .widgetList<DecoratedBox>(
+          find.descendant(
+            of: find.byKey(key),
+            matching: find.byType(DecoratedBox),
+          ),
+        )
+        .firstWhere((b) => b.decoration is ShapeDecoration);
+    return (box.decoration as ShapeDecoration).color!;
   }
 
   testWidgets('capsules take the pressed fill at once (CL-02)', (tester) async {
-    expect(pressedFill(ClockColors.green), const Color(0xFF4CD669));
-    expect(pressedFill(ClockColors.red), const Color(0xFFFF5858));
-    expect(pressedFill(ClockColors.button), const Color(0xFF434343));
+    expect(pressedFill(clockPalette.start), const Color(0xFF4CD669));
+    expect(pressedFill(clockPalette.stop), const Color(0xFFFF5858));
+    expect(pressedFill(clockPalette.lapButton), const Color(0xFF434343));
     final c = await pump(tester);
     c.select(Section.stopwatch);
     await tester.pump();
     const start = ValueKey('start stop');
-    expect(fillOf(tester, start), ClockColors.green);
+    expect(fillOf(tester, start), clockPalette.start);
     final gesture = await tester.startGesture(
       tester.getCenter(find.byKey(start)),
     );
@@ -281,16 +302,21 @@ void main() {
     await done(tester, c);
   });
 
-  testWidgets('the toolbar "+" acts on mouse down (CL-02)', (tester) async {
-    final c = await pump(tester);
-    final gesture = await tester.startGesture(
-      tester.getCenter(find.byKey(const ValueKey('add'))),
-    );
-    await tester.pump();
-    expect(find.text('Add a City'), findsOneWidget);
-    await gesture.up();
-    await done(tester, c);
-  });
+  testWidgets(
+    'the toolbar "+" acts on release, like silica_ui\'s toolbar buttons',
+    (tester) async {
+      final c = await pump(tester);
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byKey(const ValueKey('add'))),
+      );
+      await tester.pump();
+      expect(find.text('Add a City'), findsNothing);
+      await gesture.up();
+      await tester.pump();
+      expect(find.text('Add a City'), findsOneWidget);
+      await done(tester, c);
+    },
+  );
 
   testWidgets('an alarm rings on time: switch, banner after 227 ms, sound '
       'after 389 ms; Snooze rings again after the snooze length', (
@@ -389,25 +415,22 @@ void main() {
     await done(tester, c);
   });
 
-  testWidgets('the toolbar "+" is the silica_ui glass icon button (#2)', (
-    tester,
-  ) async {
-    final c = await pump(tester);
-    expect(
-      find.descendant(
-        of: find.byKey(const ValueKey('add')),
-        matching: find.byType(ToolbarSegment),
-      ),
-      findsOneWidget,
-    );
-    expect(find.byKey(const ValueKey('add')), findsOneWidget);
-    expect(
-      tester.widget(find.byKey(const ValueKey('add'))),
-      isA<ToolbarCapsule>(),
-    );
-    expect(find.byType(RoundButton), findsNothing);
-    await done(tester, c);
-  });
+  testWidgets(
+    'the toolbar "+" is the silica_ui toolbar button, 32 pt at x 976 (#2)',
+    (tester) async {
+      final c = await pump(tester);
+      expect(
+        tester.widget(find.byKey(const ValueKey('add'))),
+        isA<AmalfiToolbarButton>(),
+      );
+      // Kit `Toolbar`: the `Add` piece is 972 + 44, its 32 pt button 4 pt inside, centred.
+      expect(
+        tester.getRect(find.byKey(const ValueKey('add'))),
+        const Rect.fromLTWH(976, 10, 32, 32),
+      );
+      await done(tester, c);
+    },
+  );
 
   test('the hands sweep continuously (#3, CLOCK-HANDS)', () {
     final t = DateTime(2026, 1, 1, 3, 20, 7, 0);
@@ -564,21 +587,21 @@ void main() {
     await done(tester, c);
   });
 
-  test('card grid: the columns and widths measured at each window width', () {
-    // clock.md, CLOCK-WORLD: window width -> (cards per row, card width).
-    const measured = {
-      1400: (7, 182.9),
-      1040: (5, 190.0),
-      900: (5, 162.0),
-      800: (4, 181.25),
-      690: (3, 210.0),
+  test('card grid: 20 pt margins, 16 pt gaps, cards of at least 160 pt', () {
+    // Window width -> (cards per row, card width).
+    const expected = {
+      1400: (7, 180.57),
+      1024: (5, 184.0),
+      900: (4, 203.0),
+      800: (4, 178.0),
+      690: (3, 206.0),
     };
-    measured.forEach((width, expected) {
+    expected.forEach((width, e) {
       final grid = CardGrid.of(width.toDouble());
-      expect(grid.columns, expected.$1, reason: '$width');
-      expect(grid.cardWidth, closeTo(expected.$2, 0.1), reason: '$width');
+      expect(grid.columns, e.$1, reason: '$width');
+      expect(grid.cardWidth, closeTo(e.$2, 0.01), reason: '$width');
+      expect(grid.cardWidth, greaterThanOrEqualTo(160));
     });
-    expect(CardGrid.of(1024).cardWidth, closeTo(186.8, 0.01));
   });
 
   testWidgets(
@@ -587,7 +610,9 @@ void main() {
       final c = await pump(tester);
       expect(c.section, Section.world);
       final map = find.byKey(const ValueKey('world map'));
-      expect(tester.getSize(map), const Size(1024, 1024 * 0.488));
+      // Kit `World`: the map is 1024 × 480 at 0, 52; the cards start 16 pt below it.
+      expect(tester.getSize(map), const Size(1024, 480));
+      expect(tester.getTopLeft(map), const Offset(0, 52));
       await done(tester, c);
 
       final small = await pump(tester, size: const Size(700, 600));
@@ -596,9 +621,12 @@ void main() {
       await tester.pump();
       expect(
         tester.getSize(find.byType(WorldCard).first),
-        const Size(640 / 3, 222),
+        const Size(628 / 3, 220),
       );
-      expect(tester.getSize(map), const Size(700, 700 * 0.488));
+      expect(
+        tester.getSize(map),
+        const Size(700, 700 * ClockMetrics.worldMapRatio),
+      );
       final top = tester.getTopLeft(map);
       // Scrolling is vertical and moves the map and the cards together.
       final card = tester.getTopLeft(find.byType(WorldCard).first);
@@ -607,7 +635,10 @@ void main() {
         const Offset(0, -30),
       );
       await tester.pump();
-      expect(tester.getSize(map), const Size(700, 700 * 0.488));
+      expect(
+        tester.getSize(map),
+        const Size(700, 700 * ClockMetrics.worldMapRatio),
+      );
       expect(tester.getTopLeft(map).dy, top.dy - 30);
       expect(tester.getTopLeft(find.byType(WorldCard).first).dy, card.dy - 30);
       expect(tester.getTopLeft(map).dx, 0);
@@ -634,11 +665,9 @@ void main() {
       final context = tester.element(find.byType(ClockWindow));
       expect(MediaQuery.platformBrightnessOf(context), Brightness.dark);
       expect(SilicaAppearance.isDark(context), isTrue);
-      expect(identical(ToolbarColors.of(context), ToolbarColors.dark), isTrue);
-      expect(
-        identical(SegmentedColors.of(context), SegmentedColors.dark),
-        isTrue,
-      );
+      final theme = AmalfiTheme.of(context);
+      expect(theme.brightness, Brightness.dark);
+      expect(theme.appColors, same(AmalfiClockColors.dark));
       expect(
         window
             .where((call) => call.method == 'setAppearance')
