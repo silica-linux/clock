@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1024px" height="1024px" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <defs>
+        <path d="M536,512 C536,525.254834 525.254834,536 512,536 C498.745166,536 488,525.254834 488,512 C488,498.745166 498.745166,488 512,488 C525.254834,488 536,498.745166 536,512 Z" id="path-1"></path>
+        <linearGradient x1="0%" y1="50%" x2="100%" y2="50%" id="linearGradient-2">
+            <stop stop-color="#FFA347" offset="0%"></stop>
+            <stop stop-color="#FF8A1E" offset="50%"></stop>
+            <stop stop-color="#E8700A" offset="100%"></stop>
+        </linearGradient>
+        <circle id="path-3" cx="512" cy="512" r="24"></circle>
+        <filter x="-37.5%" y="-25.0%" width="175.0%" height="175.0%" filterUnits="objectBoundingBox" id="filter-4">
+            <feOffset dx="0" dy="6" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="5" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feComposite in="shadowBlurOuter1" in2="SourceAlpha" operator="out" result="shadowBlurOuter1"></feComposite>
+            <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.301960784 0" type="matrix" in="shadowBlurOuter1"></feColorMatrix>
+        </filter>
+    </defs>
+    <g id="Dynamic-/-Clock-/-Cap-/-Light" stroke="none" fill="none" xlink:href="#path-1">
+        <g id="Hub">
+            <use fill="black" fill-opacity="1" filter="url(#filter-4)" xlink:href="#path-3"></use>
+            <circle stroke-opacity="0.250980392" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="square" fill="url(#linearGradient-2)" fill-rule="evenodd" cx="512" cy="512" r="23.25"></circle>
+        </g>
+        <circle id="Pin" fill="#FFFFFF" fill-rule="evenodd" cx="512" cy="512" r="8"></circle>
+    </g>
+</svg>

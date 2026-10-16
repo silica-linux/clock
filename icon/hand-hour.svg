@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1024px" height="1024px" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <defs>
+        <path d="M528,308 L528,536 C528,544.836556 520.836556,552 512,552 C503.163444,552 496,544.836556 496,536 L496,308 C496,299.163444 503.163444,292 512,292 C520.836556,292 528,299.163444 528,308 Z" id="path-1"></path>
+        <linearGradient x1="0%" y1="50%" x2="100%" y2="50%" id="linearGradient-2">
+            <stop stop-color="#3A3D45" offset="0%"></stop>
+            <stop stop-color="#1D1E21" offset="50%"></stop>
+            <stop stop-color="#0B0C0E" offset="100%"></stop>
+        </linearGradient>
+        <rect id="path-3" x="496" y="292" width="32" height="260" rx="16"></rect>
+        <filter x="-56.2%" y="-4.6%" width="212.5%" height="113.8%" filterUnits="objectBoundingBox" id="filter-4">
+            <feOffset dx="0" dy="6" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="5" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feComposite in="shadowBlurOuter1" in2="SourceAlpha" operator="out" result="shadowBlurOuter1"></feComposite>
+            <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.301960784 0" type="matrix" in="shadowBlurOuter1"></feColorMatrix>
+        </filter>
+    </defs>
+    <g id="Dynamic-/-Clock-/-Hour-Hand-/-Light" stroke="none" fill="none" xlink:href="#path-1">
+        <g id="Hand">
+            <use fill="black" fill-opacity="1" filter="url(#filter-4)" xlink:href="#path-3"></use>
+            <rect stroke-opacity="0.250980392" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="square" fill="url(#linearGradient-2)" fill-rule="evenodd" x="496.75" y="292.75" width="30.5" height="258.5" rx="15.25"></rect>
+        </g>
+    </g>
+</svg>

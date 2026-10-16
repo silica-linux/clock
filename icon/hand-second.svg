@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1024px" height="1024px" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <defs>
+        <path d="M516,156 L516.000413,548.832268 C519.532002,550.375475 522,553.899522 522,558 L522,602 C522,607.522847 517.522847,612 512,612 C506.477153,612 502,607.522847 502,602 L502,558 C502,553.899133 504.468466,550.374808 508.000591,548.831829 L508,156 C508,153.790861 509.790861,152 512,152 C514.209139,152 516,153.790861 516,156 Z" id="path-1"></path>
+        <linearGradient x1="0%" y1="50%" x2="100%" y2="50%" id="linearGradient-2">
+            <stop stop-color="#FFA347" offset="0%"></stop>
+            <stop stop-color="#FF8A1E" offset="50%"></stop>
+            <stop stop-color="#E8700A" offset="100%"></stop>
+        </linearGradient>
+        <rect id="path-3" x="508" y="152" width="8" height="444" rx="4"></rect>
+        <filter x="-225.0%" y="-2.7%" width="550.0%" height="108.1%" filterUnits="objectBoundingBox" id="filter-4">
+            <feOffset dx="0" dy="6" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="5" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feComposite in="shadowBlurOuter1" in2="SourceAlpha" operator="out" result="shadowBlurOuter1"></feComposite>
+            <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.301960784 0" type="matrix" in="shadowBlurOuter1"></feColorMatrix>
+        </filter>
+        <linearGradient x1="0%" y1="50%" x2="100%" y2="50%" id="linearGradient-5">
+            <stop stop-color="#FFA347" offset="0%"></stop>
+            <stop stop-color="#FF8A1E" offset="50%"></stop>
+            <stop stop-color="#E8700A" offset="100%"></stop>
+        </linearGradient>
+        <rect id="path-6" x="502" y="548" width="20" height="64" rx="10"></rect>
+        <filter x="-90.0%" y="-18.8%" width="280.0%" height="156.2%" filterUnits="objectBoundingBox" id="filter-7">
+            <feOffset dx="0" dy="6" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="5" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feComposite in="shadowBlurOuter1" in2="SourceAlpha" operator="out" result="shadowBlurOuter1"></feComposite>
+            <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.301960784 0" type="matrix" in="shadowBlurOuter1"></feColorMatrix>
+        </filter>
+    </defs>
+    <g id="Dynamic-/-Clock-/-Second-Hand-/-Light" stroke="none" fill="none" xlink:href="#path-1">
+        <g id="Hand">
+            <use fill="black" fill-opacity="1" filter="url(#filter-4)" xlink:href="#path-3"></use>
+            <rect stroke-opacity="0.250980392" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="square" fill="url(#linearGradient-2)" fill-rule="evenodd" x="508.75" y="152.75" width="6.5" height="442.5" rx="3.25"></rect>
+        </g>
+        <g id="Counterweight">
+            <use fill="black" fill-opacity="1" filter="url(#filter-7)" xlink:href="#path-6"></use>
+            <rect stroke-opacity="0.250980392" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="square" fill="url(#linearGradient-5)" fill-rule="evenodd" x="502.75" y="548.75" width="18.5" height="62.5" rx="9.25"></rect>
+        </g>
+    </g>
+</svg>
