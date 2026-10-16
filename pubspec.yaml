@@ -16,7 +16,7 @@ dependencies:
   silica_ui:
     git:
       url: https://github.com/silica-os/silica-ui.git
-      ref: v0.34.1
+      ref: v1.0.0-alpha.5
 
 dev_dependencies:
   flutter_test:
@@ -26,9 +26,3 @@ flutter:
   generate: true
   assets:
     - assets/map/land.json
-  fonts:
-    # Inter as a variable font: the thin digits of the stopwatch and the timer (weight 200),
-    # which the static Regular and SemiBold of silica_ui cannot draw.
-    - family: InterVariable
-      fonts:
-        - asset: assets/fonts/InterVariable.ttf
