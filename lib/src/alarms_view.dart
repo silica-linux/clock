@@ -85,23 +85,27 @@ class AlarmsView extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, box) => SingleChildScrollView(
         padding: const EdgeInsets.all(ClockMetrics.cardsMargin),
-        child: Wrap(
-          spacing: CardGrid.gap,
-          runSpacing: CardGrid.gap,
-          children: [
-            for (final alarm in alarms)
-              GestureDetector(
-                onTap: () => onEdit(alarm),
-                onSecondaryTapUp: (d) =>
-                    _openMenu(context, alarm, d.globalPosition),
-                child: AlarmCard(
-                  key: ValueKey('alarm ${alarm.id}'),
-                  alarm: alarm,
-                  width: CardGrid.of(box.maxWidth).cardWidth,
-                  onToggle: () => controller.toggleAlarm(alarm),
+        // The grid starts at the left margin; a row with fewer cards than columns is not centred.
+        child: Align(
+          alignment: Alignment.topLeft,
+          child: Wrap(
+            spacing: CardGrid.gap,
+            runSpacing: CardGrid.gap,
+            children: [
+              for (final alarm in alarms)
+                GestureDetector(
+                  onTap: () => onEdit(alarm),
+                  onSecondaryTapUp: (d) =>
+                      _openMenu(context, alarm, d.globalPosition),
+                  child: AlarmCard(
+                    key: ValueKey('alarm ${alarm.id}'),
+                    alarm: alarm,
+                    width: CardGrid.of(box.maxWidth).cardWidth,
+                    onToggle: () => controller.toggleAlarm(alarm),
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

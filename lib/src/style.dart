@@ -17,7 +17,8 @@ final AmalfiColors darkColors = AmalfiColors.dark;
 abstract final class ClockFace {
   static const Color dayFace = Color(0xFFFFFFFF);
   static Color get nightFace => darkColors.surfaceSunken;
-  static Color get dayInk => darkColors.textOnAccent;
+  // Dark ink on the white day face (the app's tokens are the dark ones: the face is not).
+  static Color get dayInk => AmalfiColors.light.textPrimary;
   static const Color nightInk = Color(0xFFFFFFFF);
 }
 

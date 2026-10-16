@@ -48,6 +48,7 @@ class FakeRinger extends Ringer {
 }
 
 void main() {
+  dialTests();
   late List<MethodCall> dbus;
 
   setUp(() {
@@ -170,6 +171,11 @@ void main() {
       find.byKey(ValueKey('alarm ${c.alarms.single.id}')),
     );
     expect(card, const Size(184, 180));
+    // The grid starts at the left margin, whatever the window width (#7).
+    expect(
+      tester.getTopLeft(find.byKey(ValueKey('alarm ${c.alarms.single.id}'))).dx,
+      ClockMetrics.cardsMargin,
+    );
     // Kit `Alarm Card On`: the switch (40 × 24) at 128, 136 of the 184 × 180 card.
     final cardRect = tester.getRect(
       find.byKey(ValueKey('alarm ${c.alarms.single.id}')),
@@ -519,9 +525,8 @@ void main() {
       await tester.pump(HandMotion.redraw);
       expect(dial.debugNeedsPaint, isFalse);
       expect(
-        AnalogDialPainter(
-          day: true,
-        ).shouldRepaint(AnalogDialPainter(day: true)),
+        AnalogDialPainter(day: true)
+            .shouldRepaint(AnalogDialPainter(day: true)),
         isFalse,
       );
       await tester.pumpWidget(const SizedBox());
@@ -679,4 +684,15 @@ void main() {
       await done(tester, c);
     },
   );
+}
+
+void dialTests() {
+  test('the day face has dark ink, the night face white', () {
+    expect(ClockFace.dayInk.computeLuminance(), lessThan(0.2));
+    expect(ClockFace.nightInk, const Color(0xFFFFFFFF));
+    expect(
+      ClockFace.dayInk.computeLuminance(),
+      isNot(closeTo(ClockFace.dayFace.computeLuminance(), 0.5)),
+    );
+  });
 }
