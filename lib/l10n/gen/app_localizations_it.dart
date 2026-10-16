@@ -61,6 +61,11 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
+  String sunTimes(String rise, String set) {
+    return 'Alba $rise · Tramonto $set';
+  }
+
+  @override
   String get worldEmpty => 'Aggiungi una città per vederne l\'ora';
 
   @override
@@ -122,16 +127,6 @@ class AppLocalizationsIt extends AppLocalizations {
   String get repeatWeekends => 'Fine settimana';
 
   @override
-  String repeatSummary(String days) {
-    return 'Ripeti: $days';
-  }
-
-  @override
-  String soundSummary(String sound) {
-    return 'Suono: $sound';
-  }
-
-  @override
   String get weekdayLetters => 'LMMGVSD';
 
   @override
@@ -185,13 +180,13 @@ class AppLocalizationsIt extends AppLocalizations {
   String get lapsHeaderTotal => 'Totale';
 
   @override
-  String get unitHours => 'h';
+  String get unitHours => 'Ore';
 
   @override
-  String get unitMinutes => 'min';
+  String get unitMinutes => 'Minuti';
 
   @override
-  String get unitSeconds => 's';
+  String get unitSeconds => 'Secondi';
 
   @override
   String get timerLabel => 'Timer';

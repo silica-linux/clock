@@ -61,16 +61,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String sunTimes(String rise, String set) {
+    return 'Rise $rise · Set $set';
+  }
+
+  @override
   String get worldEmpty => 'Add a city to see its time';
 
   @override
-  String get noAlarms => 'No Alarms';
+  String get noAlarms => 'No alarms';
 
   @override
-  String get newAlarm => 'New Alarm';
+  String get newAlarm => 'New alarm';
 
   @override
-  String get editAlarm => 'Edit Alarm';
+  String get editAlarm => 'Edit alarm';
 
   @override
   String get alarmDefaultLabel => 'Alarm';
@@ -120,16 +125,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get repeatWeekends => 'Weekends';
-
-  @override
-  String repeatSummary(String days) {
-    return 'Repeat: $days';
-  }
-
-  @override
-  String soundSummary(String sound) {
-    return 'Sound: $sound';
-  }
 
   @override
   String get weekdayLetters => 'MTWTFSS';
@@ -185,13 +180,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lapsHeaderTotal => 'Total';
 
   @override
-  String get unitHours => 'h';
+  String get unitHours => 'Hours';
 
   @override
-  String get unitMinutes => 'min';
+  String get unitMinutes => 'Minutes';
 
   @override
-  String get unitSeconds => 'sec';
+  String get unitSeconds => 'Seconds';
 
   @override
   String get timerLabel => 'Timer';

@@ -1,6 +1,7 @@
-// The World section (CL-01): a map with the day/night line and a pin per city on top, a row
-// of 222 pt tall cards in a grid (186 wide at 1024 pt, 15 pt margins and gaps) below, each with a 120 pt analog face (white by day,
-// black by night), the city and its time, the day and offset, sunrise and sunset.
+// The World section (kit `Apps/Clock/World`, CL-01): a map with the day/night line and a pin
+// per city on top, a grid of 220 pt tall cards (184 wide at 1024 pt, 20 pt margins, 16 pt
+// gaps) below, each with a 120 pt analog face (white by day, black by night), the city and its
+// time, the day and offset, sunrise and sunset.
 
 import 'dart:async';
 import 'dart:convert';
@@ -16,7 +17,7 @@ import 'controller.dart';
 import 'style.dart';
 import 'time/cities.dart';
 import 'time/tzif.dart';
-import 'widgets.dart';
+import 'widgets.dart' show Sheet;
 
 /// `HH:MM`, or `h:MM AM` when the system does not use the 24-hour clock.
 String formatTime(BuildContext context, int hour, int minute) {
@@ -38,7 +39,6 @@ class WorldView extends StatefulWidget {
 
 class _WorldViewState extends State<WorldView> {
   Timer? _tick;
-  OverlayEntry? _menu;
   List<Float32List> _landRings = const [];
 
   @override
@@ -63,34 +63,21 @@ class _WorldViewState extends State<WorldView> {
   @override
   void dispose() {
     _tick?.cancel();
-    _menu?.remove();
     super.dispose();
   }
 
   void _openMenu(City city, Offset at) {
-    final overlay = Overlay.maybeOf(context);
-    if (overlay == null) return;
     final l = AppLocalizations.of(context);
-    _menu?.remove();
-    _menu = OverlayEntry(
-      builder: (_) => Positioned.fill(
-        child: MenuHost(
-          anchor: at,
-          opaque: true,
-          entries: [
-            MenuAction(
-              l.removeClock,
-              onSelected: () => widget.controller.removeCity(city.zone),
-            ),
-          ],
-          onDismissed: () {
-            _menu?.remove();
-            _menu = null;
-          },
+    showAmalfiMenu(
+      context: context,
+      position: at,
+      entries: [
+        AmalfiMenuAction(
+          l.removeClock,
+          onSelected: () => widget.controller.removeCity(city.zone),
         ),
-      ),
-    );
-    overlay.insert(_menu!);
+      ],
+    ).ignore();
   }
 
   @override
@@ -111,18 +98,17 @@ class _WorldViewState extends State<WorldView> {
           ),
         ),
     ];
-    // CLOCK-WORLD (#95, measured): the map has no fixed size, it takes the full width with
-    // height 0.488 x width and never scrolls sideways; the map and the cards scroll together
-    // in one vertical view under the toolbar. The cards sit in a grid of fixed 222 pt height
-    // whose columns come from the window width, not from the number of cities (cardGrid): a
-    // single city is one card of one slot (186 pt at 1024 pt), never the whole row.
+    // CLOCK-WORLD (#95, measured): the map has no fixed size, it takes the full width (480 pt
+    // at 1024, the kit's) and never scrolls sideways; the map and the cards scroll together in
+    // one vertical view under the toolbar. The cards sit in a grid of fixed 220 pt height
+    // whose columns come from the window width, not from the number of cities (CardGrid): a
+    // single city is one card of one slot (184 pt at 1024 pt), never the whole row.
     return LayoutBuilder(
       builder: (context, box) {
         final width = box.maxWidth;
         final grid = CardGrid.of(width);
         return SingleChildScrollView(
           key: const ValueKey('world scroll'),
-          padding: const EdgeInsets.only(top: toolbarHeight),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -142,7 +128,7 @@ class _WorldViewState extends State<WorldView> {
                   ),
                 ),
               ),
-              const SizedBox(height: ClockMetrics.worldMapGap),
+              const SizedBox(height: ClockMetrics.mapGap),
               if (cities.isEmpty)
                 SizedBox(
                   height: ClockMetrics.worldCardHeight,
@@ -150,14 +136,16 @@ class _WorldViewState extends State<WorldView> {
                   child: Center(
                     child: Text(
                       AppLocalizations.of(context).worldEmpty,
-                      style: clockText(15, color: ClockColors.secondary),
+                      style: AmalfiType.body(
+                        color: AmalfiTheme.of(context).colors.textSecondary,
+                      ),
                     ),
                   ),
                 )
               else
                 Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: ClockMetrics.cardsLeft,
+                    horizontal: ClockMetrics.cardsMargin,
                   ),
                   child: Wrap(
                     key: const ValueKey('world cards'),
@@ -181,7 +169,7 @@ class _WorldViewState extends State<WorldView> {
                     ],
                   ),
                 ),
-              const SizedBox(height: ClockMetrics.worldMapGap),
+              const SizedBox(height: ClockMetrics.cardsMargin),
             ],
           ),
         );
@@ -190,7 +178,8 @@ class _WorldViewState extends State<WorldView> {
   }
 }
 
-/// A world clock card: 222 pt tall, `#323232`, radius 12, the face 20 pt from the top.
+/// A world clock card (kit `City Card Day|Night`): 220 pt tall, `App/Clock/Card`, radius 12,
+/// the face 20 pt from the top.
 class WorldCard extends StatelessWidget {
   const WorldCard({
     super.key,
@@ -240,72 +229,56 @@ class WorldCard extends StatelessWidget {
       return formatTime(context, w.hour, w.minute);
     }
 
-    return Container(
+    final colors = AmalfiTheme.of(context).colors;
+    return SizedBox(
       width: width,
       height: ClockMetrics.worldCardHeight,
-      decoration: BoxDecoration(
-        color: ClockColors.card,
-        borderRadius: BorderRadius.circular(ClockMetrics.cardRadius),
-      ),
-      child: Column(
-        children: [
-          const SizedBox(height: ClockMetrics.faceTop),
-          SizedBox.square(
-            dimension: ClockMetrics.face,
-            child: AnalogFace(
-              time: wall,
-              day: daylight,
-              now: now,
-              clock: clock,
-            ),
-          ),
-          const SizedBox(height: 18),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Text(
-              l.cityTime(
-                city.name,
-                formatTime(context, wall.hour, wall.minute),
+      child: DecoratedBox(
+        decoration: AmalfiShapeDecoration(
+          color: clockPalette.card,
+          shape: AmalfiSmoothBorder(radius: ClockMetrics.cardRadius),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: ClockMetrics.faceTop),
+            SizedBox.square(
+              dimension: ClockMetrics.face,
+              child: AnalogFace(
+                time: wall,
+                day: daylight,
+                now: now,
+                clock: clock,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: clockText(13, weight: FontWeight.w600),
             ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            l.hoursOffset(day, offsetText),
-            style: clockText(12, color: ClockColors.secondary),
-          ),
-          const SizedBox(height: 4),
-          if (sun != null)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const ClockSymbol(
-                  'sunrise',
-                  size: 12,
-                  color: ClockColors.secondary,
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                l.cityTime(
+                  city.name,
+                  formatTime(context, wall.hour, wall.minute),
                 ),
-                const SizedBox(width: 3),
-                Text(
-                  sunText(sun.$1),
-                  style: clockText(11, color: ClockColors.secondary),
-                ),
-                const SizedBox(width: 10),
-                const ClockSymbol(
-                  'sunset',
-                  size: 12,
-                  color: ClockColors.secondary,
-                ),
-                const SizedBox(width: 3),
-                Text(
-                  sunText(sun.$2),
-                  style: clockText(11, color: ClockColors.secondary),
-                ),
-              ],
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: AmalfiType.headline(color: colors.textPrimary),
+              ),
             ),
-        ],
+            const SizedBox(height: 2),
+            Text(
+              l.hoursOffset(day, offsetText),
+              style: AmalfiType.callout(color: colors.textSecondary),
+            ),
+            const SizedBox(height: 4),
+            if (sun != null)
+              Text(
+                l.sunTimes(sunText(sun.$1), sunText(sun.$2)),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AmalfiType.caption(color: colors.textTertiary),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -395,7 +368,8 @@ class _AnalogFaceState extends State<AnalogFace> {
   }
 }
 
-/// The dial of the analog face: white with black numerals by day, the opposite by night.
+/// The dial of the analog face (kit `City Card Day|Night`): white with dark numerals by day,
+/// `Surface/Sunken` with white numerals by night.
 class AnalogDialPainter extends CustomPainter {
   AnalogDialPainter({required this.day});
 
@@ -405,19 +379,15 @@ class AnalogDialPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final r = size.shortestSide / 2;
     final c = size.center(Offset.zero);
-    final face = day ? const Color(0xFFFFFFFF) : const Color(0xFF000000);
-    final ink = day ? const Color(0xFF000000) : const Color(0xFFFFFFFF);
+    final face = day ? ClockFace.dayFace : ClockFace.nightFace;
+    final ink = day ? ClockFace.dayInk : ClockFace.nightInk;
     canvas.drawCircle(c, r, Paint()..color = face);
     for (var n = 1; n <= 12; n++) {
       final a = n * math.pi / 6 - math.pi / 2;
       final tp = TextPainter(
         text: TextSpan(
           text: '$n',
-          style: clockText(
-            15 * r / 60,
-            color: ink,
-            weight: FontWeight.w600,
-          ).copyWith(height: 1),
+          style: AmalfiType.label(color: ink),
         ),
         textDirection: TextDirection.ltr,
       )..layout();
@@ -430,8 +400,9 @@ class AnalogDialPainter extends CustomPainter {
   bool shouldRepaint(AnalogDialPainter old) => old.day != day;
 }
 
-/// The hands of the analog face, over [AnalogDialPainter]: black by day, white by night; the
-/// second hand is thin and orange with an orange center dot.
+/// The hands of the analog face, over [AnalogDialPainter]: dark by day, white by night; the
+/// second hand is a thin one in `App/Clock/Accent` with an accent pivot (kit: hour and minute
+/// hands 4 pt wide, 60 and 88 pt long, second hand 1 pt wide, pivot 8 pt).
 class ClockFacePainter extends CustomPainter {
   ClockFacePainter({required this.seconds, required this.day});
 
@@ -443,7 +414,7 @@ class ClockFacePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final r = size.shortestSide / 2;
     final c = size.center(Offset.zero);
-    final ink = day ? const Color(0xFF000000) : const Color(0xFFFFFFFF);
+    final ink = day ? ClockFace.dayInk : ClockFace.nightInk;
     void hand(double fraction, double length, double width, Color color) {
       final a = fraction * 2 * math.pi - math.pi / 2;
       canvas.drawLine(
@@ -459,11 +430,10 @@ class ClockFacePainter extends CustomPainter {
     final secondHand = seconds % 60;
     final minuteHand = seconds / 60 % 60;
     final hourHand = seconds / 3600 % 12;
-    hand(hourHand / 12, r * 0.5, 4 * r / 60, ink);
-    hand(minuteHand / 60, r * 0.75, 4 * r / 60, ink);
-    canvas.drawCircle(c, 3.5 * r / 60, Paint()..color = ink);
-    hand(secondHand / 60, r * 0.86, 1.2 * r / 60, ClockColors.orange);
-    canvas.drawCircle(c, 2.2 * r / 60, Paint()..color = ClockColors.orange);
+    hand(hourHand / 12, r * 0.5, 4, ink);
+    hand(minuteHand / 60, r * 0.73, 4, ink);
+    hand(secondHand / 60, r * 0.83, 1, clockPalette.accent);
+    canvas.drawCircle(c, 4, Paint()..color = clockPalette.accent);
   }
 
   @override
@@ -525,15 +495,20 @@ class WorldMapPainter extends CustomPainter {
     return Duration(microseconds: left);
   }
 
+  /// Where [lat], [lon] fall on a map of [size]: equirectangular, one degree is `width / 360`
+  /// in both directions, the equator in the middle.
+  static Offset project(double lat, double lon, Size size) => Offset(
+    (lon + 180) / 360 * size.width,
+    size.height / 2 - lat * size.width / 360,
+  );
+
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()..color = const Color(0xFF000000),
-    );
-    Offset point(double lat, double lon) =>
-        Offset((lon + 180) / 360 * size.width, (90 - lat) / 180 * size.height);
-    final ground = Paint()..color = const Color(0xFF3A3A3C);
+    canvas.drawRect(Offset.zero & size, Paint()..color = ClockMap.ocean);
+    // Equirectangular, centred on the equator and cropped at the poles as the kit's map is:
+    // one degree is width / 360 in both directions.
+    Offset point(double lat, double lon) => project(lat, lon, size);
+    final ground = Paint()..color = ClockMap.land;
     for (final ring in land) {
       final path = Path();
       for (var k = 0; k + 1 < ring.length; k += 2) {
@@ -543,7 +518,7 @@ class WorldMapPainter extends CustomPainter {
       canvas.drawPath(path..close(), ground);
     }
     final zones = Paint()
-      ..color = const Color(0x22FFFFFF)
+      ..color = ClockMap.zoneLine
       ..strokeWidth = 1;
     for (var lon = -172.5; lon <= 180; lon += 15) {
       final x = (lon + 180) / 360 * size.width;
@@ -587,32 +562,41 @@ class WorldMapPainter extends CustomPainter {
       ..lineTo(size.width, nightTop ? 0 : size.height)
       ..lineTo(0, nightTop ? 0 : size.height)
       ..close();
-    canvas.drawPath(night, Paint()..color = const Color(0x66000000));
+    canvas.drawPath(night, Paint()..color = ClockMap.night);
     canvas.drawPath(
       line,
       Paint()
-        ..color = const Color(0x66FFFFFF)
+        ..color = ClockMap.boundary
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1,
     );
     for (final (city, time) in pins) {
       final p = point(city.latitude, city.longitude);
-      canvas.drawCircle(p, 4, Paint()..color = ClockColors.orange);
-      final tp = TextPainter(
-        text: TextSpan(
-          children: [
-            TextSpan(
-              text: '${city.name}\n',
-              style: clockText(12, weight: FontWeight.w600),
-            ),
-            TextSpan(text: time, style: clockText(11)),
-          ],
-        ),
+      canvas.drawCircle(
+        p,
+        ClockMetrics.pinRadius,
+        Paint()..color = clockPalette.accent,
+      );
+      TextPainter text(String s, TextStyle style) => TextPainter(
+        text: TextSpan(text: s, style: style),
         textDirection: TextDirection.ltr,
+        maxLines: 1,
       )..layout();
+      final name = text(
+        city.name,
+        AmalfiType.label(color: darkColors.textPrimary),
+      );
+      final clock = text(
+        time,
+        AmalfiType.caption(color: darkColors.textSecondary),
+      );
+      // The kit: the name 8 pt right of the pin's centre and 8 above it, the time 5 below.
       // Near the right edge the label goes on the left of the pin.
-      final right = p.dx + 8 + tp.width <= size.width;
-      tp.paint(canvas, p + Offset(right ? 8 : -8 - tp.width, -8));
+      final width = math.max(name.width, clock.width);
+      final right = p.dx + 8 + width <= size.width;
+      final x = right ? p.dx + 8 : p.dx - 8 - width;
+      name.paint(canvas, Offset(x, p.dy - 8));
+      clock.paint(canvas, Offset(x, p.dy + 5));
     }
   }
 
@@ -638,8 +622,8 @@ class WorldMapPainter extends CustomPainter {
   }
 }
 
-/// The sheet that adds a city: a 620 × 680 sheet with a round ×, a 604 × 36 search field with
-/// the orange focus ring and plain 24 pt rows.
+/// The sheet that adds a city (no kit master: built from the Amalfi pieces on the editor's
+/// sheet): 620 × 680, a round × and the title on one line, a search field and 28 pt rows.
 class AddCitySheet extends StatefulWidget {
   const AddCitySheet({
     super.key,
@@ -668,47 +652,44 @@ class _AddCitySheetState extends State<AddCitySheet> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final colors = AmalfiTheme.of(context).colors;
     final results = searchCities(widget.cities, _query.text);
     return Sheet(
       size: const Size(620, 680),
       onDismiss: widget.onClose,
       child: Padding(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
               children: [
-                RoundButton(
+                AmalfiIconButton(
                   key: const ValueKey('close sheet'),
-                  symbol: 'xmark',
-                  size: 28,
+                  icon: const AmalfiGlyph(AmalfiGlyphs.xmark),
+                  semanticLabel: l.cancel,
                   onPressed: widget.onClose,
                 ),
                 Expanded(
                   child: Text(
                     l.addCity,
                     textAlign: TextAlign.center,
-                    style: clockText(15, weight: FontWeight.w600),
+                    style: AmalfiType.title3(color: colors.textPrimary),
                   ),
                 ),
                 const SizedBox(width: 28),
               ],
             ),
-            const SizedBox(height: 10),
-            ClockTextField(
+            const SizedBox(height: 16),
+            AmalfiSearchField(
               key: const ValueKey('city search'),
               controller: _query,
               placeholder: l.searchCities,
-              width: 604,
-              height: 36,
+              size: AmalfiFieldSize.large,
+              width: double.infinity,
               autofocus: true,
-              leading: const ClockSymbol(
-                'search',
-                size: 14,
-                color: ClockColors.secondary,
-              ),
               onChanged: (_) => setState(() {}),
+              onCleared: () => setState(() {}),
               onSubmitted: (_) {
                 if (results.isNotEmpty) widget.onPick(results.first);
               },
@@ -719,12 +700,12 @@ class _AddCitySheetState extends State<AddCitySheet> {
                   ? Center(
                       child: Text(
                         l.noResults,
-                        style: clockText(13, color: ClockColors.secondary),
+                        style: AmalfiType.body(color: colors.textSecondary),
                       ),
                     )
                   : ListView.builder(
                       itemCount: results.length,
-                      itemExtent: 24,
+                      itemExtent: 28,
                       itemBuilder: (context, i) => _CityRow(
                         city: results[i],
                         onTap: () => widget.onPick(results[i]),
@@ -751,29 +732,38 @@ class _CityRowState extends State<_CityRow> {
   bool _hover = false;
 
   @override
-  Widget build(BuildContext context) => MouseRegion(
-    onEnter: (_) => setState(() => _hover = true),
-    onExit: (_) => setState(() => _hover = false),
-    child: GestureDetector(
-      key: ValueKey('city ${widget.city.zone}'),
-      behavior: HitTestBehavior.opaque,
-      onTap: widget.onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        alignment: Alignment.centerLeft,
-        decoration: BoxDecoration(
-          color: _hover ? ClockColors.orange : null,
-          borderRadius: BorderRadius.circular(5),
-        ),
-        child: Text(
-          widget.city.country.isEmpty
-              ? widget.city.name
-              : '${widget.city.name}, ${widget.city.country}',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: clockText(13),
+  Widget build(BuildContext context) {
+    final colors = AmalfiTheme.of(context).colors;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        key: ValueKey('city ${widget.city.zone}'),
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onTap,
+        child: DecoratedBox(
+          decoration: AmalfiShapeDecoration(
+            color: _hover ? colors.accentAmalfi : null,
+            shape: AmalfiSmoothBorder(radius: AmalfiRadii.smallControl),
+          ),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                widget.city.country.isEmpty
+                    ? widget.city.name
+                    : '${widget.city.name}, ${widget.city.country}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AmalfiType.body(
+                  color: _hover ? colors.textOnAccent : colors.textPrimary,
+                ),
+              ),
+            ),
+          ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }

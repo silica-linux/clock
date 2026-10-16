@@ -12,12 +12,12 @@ import 'package:silica_ui/silica_ui.dart';
 import '../l10n/gen/app_localizations.dart';
 import 'alarms_view.dart';
 import 'controller.dart';
+import 'model/alarms.dart';
 import 'model/timers.dart';
 import 'stopwatch_view.dart';
 import 'style.dart';
 import 'timers_view.dart';
 import 'toolbar.dart';
-import 'widgets.dart';
 import 'world_view.dart';
 
 /// The system languages resolved against ours, English when none matches.
@@ -67,30 +67,35 @@ class _ClockAppState extends State<ClockApp> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  /// The app is always dark, whatever the system appearance is (CL-01: the measured light and
-  /// dark captures are identical): the toolbar controls, menus and alerts of silica_ui and
-  /// the window buttons, bar and shadow Ossido draws take the dark look.
+  /// The app is always dark, whatever the system appearance is (kit `App · Clock`, CL-01: the
+  /// measured light and dark captures are identical): the Amalfi theme with the Clock
+  /// palette, the menu bar and alerts of silica_ui and the window buttons, bar and shadow
+  /// Ossido draws take the dark look.
   @override
   Widget build(BuildContext context) => SilicaAppearanceScope(
     appearance: SilicaAppearance.dark,
-    child: Localizations(
-      locale: _locale,
-      delegates: const [
-        AppLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ],
-      child: WindowActive(
-        active: _active,
-        child: DefaultTextEditingShortcuts(
-          child: ColoredBox(
-            color: ClockColors.background,
-            child: Overlay(
-              initialEntries: [
-                OverlayEntry(
-                  builder: (context) =>
-                      ClockWindow(controller: widget.controller),
-                ),
-              ],
+    child: AmalfiTheme(
+      brightness: Brightness.dark,
+      app: 'Clock',
+      child: Localizations(
+        locale: _locale,
+        delegates: const [
+          AppLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+        ],
+        child: WindowActiveScope(
+          active: _active,
+          child: DefaultTextEditingShortcuts(
+            child: ColoredBox(
+              color: clockPalette.window,
+              child: Overlay(
+                initialEntries: [
+                  OverlayEntry(
+                    builder: (context) =>
+                        ClockWindow(controller: widget.controller),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -108,10 +113,10 @@ class ClockWindow extends StatefulWidget {
 }
 
 class _ClockWindowState extends State<ClockWindow> {
-  final GlobalKey<AlarmsViewState> _alarms = GlobalKey();
   bool _addingCity = false;
-  OverlayEntry? _menu;
 
+  /// The alarm in the editor sheet, which covers the whole window (toolbar included).
+  Alarm? _editing;
   ClockController get c => widget.controller;
 
   @override
@@ -125,7 +130,6 @@ class _ClockWindowState extends State<ClockWindow> {
   @override
   void dispose() {
     c.removeListener(_changed);
-    _menu?.remove();
     super.dispose();
   }
 
@@ -134,7 +138,7 @@ class _ClockWindowState extends State<ClockWindow> {
       case Section.world:
         setState(() => _addingCity = true);
       case Section.alarms:
-        _alarms.currentState?.addAlarm();
+        _addAlarm();
       case Section.timers:
         _presets(at);
       case Section.stopwatch:
@@ -142,39 +146,39 @@ class _ClockWindowState extends State<ClockWindow> {
     }
   }
 
+  /// Opens the editor for a new alarm at the current time.
+  void _addAlarm() {
+    final now = c.now();
+    setState(
+      () => _editing = Alarm(
+        id: c.settings.nextAlarmId(),
+        hour: now.hour,
+        minute: now.minute,
+      ),
+    );
+  }
+
   void _presets(Offset at) {
-    final overlay = Overlay.maybeOf(context);
-    if (overlay == null) return;
     final l = AppLocalizations.of(context);
     String name(int minutes) =>
         minutes >= 60 ? l.hours(minutes ~/ 60) : l.minutes(minutes);
-    _menu?.remove();
-    _menu = OverlayEntry(
-      builder: (_) => Positioned.fill(
-        child: MenuHost(
-          // The menu opens below the "+" and ends at its right edge.
-          anchor: at - const Offset(180, 0),
-          opaque: true,
-          entries: [
-            MenuAction(
-              l.presets,
-              submenu: [
-                for (final m in timerPresetMinutes)
-                  MenuAction(
-                    name(m),
-                    onSelected: () => c.startTimer(Duration(minutes: m)),
-                  ),
-              ],
-            ),
+    showAmalfiMenu(
+      context: context,
+      // The menu opens below the "+" and ends at its right edge.
+      position: at - const Offset(200, 0),
+      entries: [
+        AmalfiMenuAction(
+          l.presets,
+          submenu: [
+            for (final m in timerPresetMinutes)
+              AmalfiMenuAction(
+                name(m),
+                onSelected: () => c.startTimer(Duration(minutes: m)),
+              ),
           ],
-          onDismissed: () {
-            _menu?.remove();
-            _menu = null;
-          },
         ),
-      ),
-    );
-    overlay.insert(_menu!);
+      ],
+    ).ignore();
   }
 
   @override
@@ -182,7 +186,10 @@ class _ClockWindowState extends State<ClockWindow> {
     c.strings = AppLocalizations.of(context);
     final section = switch (c.section) {
       Section.world => WorldView(controller: c),
-      Section.alarms => AlarmsView(key: _alarms, controller: c),
+      Section.alarms => AlarmsView(
+        controller: c,
+        onEdit: (a) => setState(() => _editing = a),
+      ),
       Section.stopwatch => StopwatchView(controller: c),
       Section.timers => TimersView(controller: c),
     };
@@ -193,21 +200,33 @@ class _ClockWindowState extends State<ClockWindow> {
         autofocus: true,
         child: Stack(
           children: [
-            Positioned.fill(child: section),
-            Positioned(
-              left: 0,
-              right: 0,
-              top: 0,
-              child: ClockToolbar(
-                section: c.section,
-                onSection: c.select,
-                centerOffset: (width) => c.hasTimerList
-                    ? ClockMetrics.timerSidebar +
-                          (width - ClockMetrics.timerSidebar) / 2
-                    : width / 2,
-                onAdd: c.section == Section.stopwatch ? null : _add,
-              ),
+            Column(
+              children: [
+                ClockToolbar(
+                  section: c.section,
+                  onSection: c.select,
+                  onAdd: c.section == Section.stopwatch ? null : _add,
+                ),
+                Expanded(child: section),
+              ],
             ),
+            if (_editing case final editing?)
+              Positioned.fill(
+                child: AlarmEditor(
+                  key: ValueKey('editor ${editing.id}'),
+                  alarm: editing,
+                  isNew: !c.alarms.any((a) => a.id == editing.id),
+                  onCancel: () => setState(() => _editing = null),
+                  onSave: (a) {
+                    c.saveAlarm(a);
+                    setState(() => _editing = null);
+                  },
+                  onDelete: () {
+                    c.deleteAlarm(editing.id);
+                    setState(() => _editing = null);
+                  },
+                ),
+              ),
             if (_addingCity)
               Positioned.fill(
                 child: AddCitySheet(

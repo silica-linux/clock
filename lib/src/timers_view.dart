@@ -1,9 +1,9 @@
-// The Timers section (CL-01). At rest: a picker with three parts (hours, minutes, seconds) as
-// light thin digits with small gray units above, a label, the sound and Cancel / Start.
-// Running: a 320 pt list on the left (the timers as 300 × 92 cards with a round pause button
-// and its progress ring, then the recent timers with a green play button), and in the main
-// area a 360 pt ring, stroke 6, orange on `#3b3b3d`, shrinking from the top, with the end
-// time, the remaining time, the label and Cancel / Pause.
+// The Timers section (kit `Apps/Clock/Timer Picker`, `Timer Running`, CL-01). At rest: a
+// picker with three parts (hours, minutes, seconds) as Numeral 72 digits with their units above,
+// a label, the sound and Cancel / Start. Running: a 320 pt list on the left (the timers as
+// 300 × 92 cards with a round pause button, then the recent timers with a green play button),
+// and in the main area a 360 pt ring, stroke 6, orange on `Ring Track`, shrinking from the top,
+// with the end time, the remaining time, the label, the sound and Cancel / Pause.
 
 import 'dart:math' as math;
 
@@ -11,6 +11,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:silica_ui/silica_ui.dart';
 
 import '../l10n/gen/app_localizations.dart';
 import 'controller.dart';
@@ -19,8 +20,8 @@ import 'style.dart';
 import 'widgets.dart';
 import 'world_view.dart' show formatTime;
 
-/// The thin digits of the picker and of the ring: 73 pt tall (CL-01, 387 pt block).
-const double timerDigitSize = 73 / 0.755;
+/// `hh:mm:ss`, always with the hours: the kit's timer digits.
+String timerDigits(Duration d) => formatCountdown(d, alwaysHours: true);
 
 class TimersView extends StatefulWidget {
   const TimersView({super.key, required this.controller});
@@ -83,20 +84,13 @@ class _TimersViewState extends State<TimersView>
     final c = widget.controller;
     final current = c.currentTimer;
     final list = c.hasTimerList;
-    return Row(
+    final colors = AmalfiTheme.of(context).colors;
+    // The list is 320 wide with a 1 pt separator on its edge; the main area is the rest of
+    // the window, so the ring centres at 320 + (width - 320) / 2 (672 at 1024).
+    return Stack(
       children: [
-        if (list)
-          SizedBox(
-            width: ClockMetrics.timerSidebar,
-            child: _TimerList(
-              controller: c,
-              onSelect: (i) => setState(() {
-                c.selectedTimer = i;
-                _picking = false;
-              }),
-            ),
-          ),
-        Expanded(
+        Positioned.fill(
+          left: list ? ClockMetrics.timerSidebar : 0,
           child: current == null || _picking
               ? _Picker(
                   duration: _picked,
@@ -109,13 +103,38 @@ class _TimersViewState extends State<TimersView>
                 )
               : _Running(key: ValueKey(current), controller: c, timer: current),
         ),
+        if (list) ...[
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: ClockMetrics.timerSidebar,
+            child: ColoredBox(
+              color: colors.surfaceSidebar,
+              child: _TimerList(
+                controller: c,
+                onSelect: (i) => setState(() {
+                  c.selectedTimer = i;
+                  _picking = false;
+                }),
+              ),
+            ),
+          ),
+          Positioned(
+            left: ClockMetrics.timerSidebar,
+            top: 0,
+            bottom: 0,
+            width: 1,
+            child: ColoredBox(color: colors.lineSeparator),
+          ),
+        ],
       ],
     );
   }
 }
 
-/// The picker: `hh:mm:ss` in light thin digits; click a part, then type or use the arrows
-/// (the scroll wheel changes the part under the pointer).
+/// The picker: `hh:mm:ss` in Numeral 72 digits with their units above; click a part, then type
+/// or use the arrows (the scroll wheel changes the part under the pointer).
 class _Picker extends StatefulWidget {
   const _Picker({
     required this.duration,
@@ -192,66 +211,78 @@ class _PickerState extends State<_Picker> {
     return KeyEventResult.handled;
   }
 
+  /// The kit's block: units at 124 (in the section), the digits' centre at 171, the label field
+  /// at 288, the sound at 328 and the buttons at 412; it ends at 440 of the 748 pt section.
+  static const double _unitsTop = 0;
+  static const double _digitsTop = 11;
+  static const double _fieldTop = 164;
+  static const double _soundTop = 204;
+  static const double _buttonsTop = 288;
+  static const double _blockHeight = 316;
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final colors = AmalfiTheme.of(context).colors;
     final units = [l.unitHours, l.unitMinutes, l.unitSeconds];
     final parts = _parts;
-    Widget part(int i) => Listener(
-      onPointerSignal: (e) {
-        if (e is PointerScrollEvent) {
-          _set(i, parts[i] + (e.scrollDelta.dy < 0 ? 1 : -1));
-        }
-      },
-      child: GestureDetector(
-        key: ValueKey('picker part $i'),
-        onTap: () {
-          _focus.requestFocus();
-          setState(() {
-            _part = i;
-            _typed = '';
-          });
+    final digits = numeral(72, color: colors.textPrimary, tabular: true);
+    Widget part(int i) {
+      final focused = _focus.hasFocus && _part == i;
+      return Listener(
+        onPointerSignal: (e) {
+          if (e is PointerScrollEvent) {
+            _set(i, parts[i] + (e.scrollDelta.dy < 0 ? 1 : -1));
+          }
         },
-        child: Column(
-          children: [
-            Text(
-              units[i],
-              style: clockText(
-                13,
-                weight: FontWeight.w600,
-                color: ClockColors.pickerUnits,
+        child: GestureDetector(
+          key: ValueKey('picker part $i'),
+          onTap: () {
+            _focus.requestFocus();
+            setState(() {
+              _part = i;
+              _typed = '';
+            });
+          },
+          child: Stack(
+            alignment: Alignment.topCenter,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: _digitsTop),
+                child: DecoratedBox(
+                  decoration: AmalfiShapeDecoration(
+                    color: focused
+                        ? clockPalette.accent.withValues(alpha: 0.2)
+                        : null,
+                    shape: AmalfiSmoothBorder(radius: 8),
+                  ),
+                  child: Text(
+                    parts[i].toString().padLeft(2, '0'),
+                    style: digits,
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 21),
-            Container(
-              padding: EdgeInsets.zero,
-              decoration: BoxDecoration(
-                color: _focus.hasFocus && _part == i
-                    ? const Color(0x33FF9230)
-                    : null,
-                borderRadius: BorderRadius.circular(8),
+              Positioned(
+                top: _unitsTop,
+                left: 0,
+                right: 0,
+                height: 14,
+                child: Text(
+                  units[i],
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  style: AmalfiType.label(color: colors.textTertiary),
+                ),
               ),
-              child: Text(
-                parts[i].toString().padLeft(2, '0'),
-                style: thinDigits(
-                  timerDigitSize,
-                  color: ClockColors.pickerDigits,
-                ).copyWith(letterSpacing: -3.0),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    }
+
     final colon = Padding(
-      padding: const EdgeInsets.only(top: 20),
-      child: Text(
-        ':',
-        style: thinDigits(
-          timerDigitSize,
-          color: ClockColors.pickerDigits,
-        ).copyWith(letterSpacing: -3.0),
-      ),
+      padding: const EdgeInsets.only(top: _digitsTop),
+      child: Text(':', style: digits),
     );
     return Focus(
       focusNode: _focus,
@@ -260,73 +291,75 @@ class _PickerState extends State<_Picker> {
       onFocusChange: (_) => setState(() {}),
       child: Column(
         children: [
-          const Spacer(flex: 17),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [part(0), colon, part(1), colon, part(2)],
-          ),
-          const SizedBox(height: 12),
-          ClockTextField(
-            key: const ValueKey('timer label'),
-            controller: widget.label,
-            placeholder: l.timerLabel,
-            width: 200,
-            height: 22,
-            bordered: false,
-          ),
-          const SizedBox(height: 5),
-          // The sound: a pop-up button with the only sound for now.
-          Container(
-            width: 200,
-            height: 24,
-            padding: const EdgeInsets.only(left: 11, right: 6),
-            decoration: BoxDecoration(
-              color: ClockColors.button,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Row(
+          const Spacer(flex: 124),
+          SizedBox(
+            height: _blockHeight,
+            child: Stack(
+              alignment: Alignment.topCenter,
               children: [
-                Expanded(child: Text(l.defaultSound, style: clockText(13))),
-                const ClockSymbol(
-                  'chevron-up-down',
-                  size: 12,
-                  color: ClockColors.text,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [part(0), colon, part(1), colon, part(2)],
+                ),
+                Positioned(
+                  top: _fieldTop,
+                  child: AmalfiTextField(
+                    key: const ValueKey('timer label'),
+                    controller: widget.label,
+                    placeholder: l.timerLabel,
+                    width: 200,
+                  ),
+                ),
+                Positioned(
+                  top: _soundTop,
+                  child: AmalfiPopUpButton<int>(
+                    key: const ValueKey('timer sound'),
+                    // The only sound the app has: listed, so the control does what it
+                    // says (more sounds: silica-os/clock issue).
+                    items: [AmalfiPopUpItem(value: 0, label: l.defaultSound)],
+                    value: 0,
+                    onChanged: (_) {},
+                    width: 200,
+                    semanticLabel: l.sound,
+                  ),
+                ),
+                Positioned(
+                  top: _buttonsTop,
+                  child: Row(
+                    spacing: ClockMetrics.buttonsGap,
+                    children: [
+                      ClockButton(
+                        key: const ValueKey('timer cancel'),
+                        label: l.cancel,
+                        width: ClockMetrics.buttonWide,
+                        onPressed: widget.onCancel,
+                      ),
+                      ClockButton(
+                        key: const ValueKey('timer start'),
+                        label: l.start,
+                        fill: WindowActiveScope.of(context)
+                            ? clockPalette.start
+                            : colors.textTertiary,
+                        onPressed: widget.duration > Duration.zero
+                            ? widget.onStart
+                            : null,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-          const Spacer(flex: 13),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CapsuleButton(
-                key: const ValueKey('timer cancel'),
-                label: l.cancel,
-                color: ClockColors.button,
-                onPressed: widget.onCancel,
-              ),
-              const SizedBox(width: ClockMetrics.capsuleGap),
-              CapsuleButton(
-                key: const ValueKey('timer start'),
-                label: l.start,
-                color: WindowActive.of(context)
-                    ? ClockColors.green
-                    : ClockColors.dimmed,
-                onPressed: widget.duration > Duration.zero
-                    ? widget.onStart
-                    : null,
-              ),
-            ],
-          ),
-          const SizedBox(height: ClockMetrics.buttonsBottom),
+          const Spacer(flex: 308),
         ],
       ),
     );
   }
 }
 
-/// A running or paused timer in the main area.
+/// A running or paused timer in the main area (kit `Timer Running`): the ring, then the sound
+/// and the buttons, as one 360 × 500 block that starts 96 pt below the toolbar.
 class _Running extends StatelessWidget {
   const _Running({super.key, required this.controller, required this.timer});
   final ClockController controller;
@@ -335,107 +368,138 @@ class _Running extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final colors = AmalfiTheme.of(context).colors;
     final t = timer.timer;
     final now = controller.now();
     final end = now.add(t.remaining);
+    final minor = t.running ? colors.textSecondary : colors.textTertiary;
+    const ring = ClockMetrics.ring;
     return Column(
       children: [
-        const Spacer(),
-        SizedBox.square(
-          dimension: ClockMetrics.ring,
-          child: CustomPaint(
-            key: const ValueKey('timer ring'),
-            painter: RingPainter(fraction: t.fraction),
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ClockSymbol(
-                        'bell-fill',
-                        size: 13,
-                        color: t.running
-                            ? ClockColors.secondary
-                            : ClockColors.dimmed,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        l.endsAt(formatTime(context, end.hour, end.minute)),
-                        style: clockText(
-                          15,
-                          color: t.running
-                              ? ClockColors.secondary
-                              : ClockColors.dimmed,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    formatCountdown(t.remaining),
+        const Spacer(flex: 96),
+        SizedBox(
+          width: ring,
+          height: 500,
+          child: Stack(
+            children: [
+              Positioned(
+                left: 0,
+                top: 0,
+                width: ring,
+                height: ring,
+                child: CustomPaint(
+                  key: const ValueKey('timer ring'),
+                  painter: RingPainter(fraction: t.fraction),
+                ),
+              ),
+              Positioned(
+                left: ring / 2 - 8,
+                top: 84,
+                child: ClockGlyph('bell', size: 16, color: minor),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                top: 108,
+                height: 16,
+                child: Text(
+                  l.endsAt(formatTime(context, end.hour, end.minute)),
+                  textAlign: TextAlign.center,
+                  style: AmalfiType.callout(color: minor),
+                ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                top: 165 - 64 / 2,
+                height: 64,
+                child: Center(
+                  child: Text(
+                    timerDigits(t.remaining),
                     key: const ValueKey('remaining'),
-                    style: thinDigits(
-                      t.remaining.inHours > 0
-                          ? timerDigitSize * 0.72
-                          : timerDigitSize,
+                    style: numeral(
+                      64,
+                      color: colors.textPrimary,
+                      tabular: true,
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    t.label.isEmpty ? l.timerLabel : t.label,
-                    style: clockText(15, color: ClockColors.secondary),
-                  ),
-                ],
+                ),
               ),
-            ),
+              Positioned(
+                left: 0,
+                right: 0,
+                top: 236,
+                height: 16,
+                child: Text(
+                  t.label.isEmpty ? l.timerLabel : t.label,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AmalfiType.callout(color: colors.textSecondary),
+                ),
+              ),
+              Positioned(
+                left: (ring - 200) / 2,
+                top: 392,
+                child: AmalfiPopUpButton<int>(
+                  key: const ValueKey('timer running sound'),
+                  items: [AmalfiPopUpItem(value: 0, label: l.defaultSound)],
+                  value: 0,
+                  onChanged: (_) {},
+                  width: 200,
+                  semanticLabel: l.sound,
+                ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                top: 472,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  spacing: ClockMetrics.buttonsGap,
+                  children: [
+                    ClockButton(
+                      key: const ValueKey('timer cancel'),
+                      label: l.cancel,
+                      width: ClockMetrics.buttonWide,
+                      onPressed: () => controller.cancelTimer(timer),
+                    ),
+                    ClockButton(
+                      key: const ValueKey('timer pause'),
+                      label: t.running ? l.pause : l.resume,
+                      width: ClockMetrics.buttonWide,
+                      fill: t.running
+                          ? clockPalette.accent
+                          : clockPalette.start,
+                      onPressed: () => controller.pauseResume(timer),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
-        const Spacer(),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CapsuleButton(
-              key: const ValueKey('timer cancel'),
-              label: l.cancel,
-              color: ClockColors.button,
-              onPressed: () => controller.cancelTimer(timer),
-            ),
-            const SizedBox(width: ClockMetrics.capsuleGap),
-            CapsuleButton(
-              key: const ValueKey('timer pause'),
-              label: t.running ? l.pause : l.resume,
-              color: t.running ? ClockColors.orange : ClockColors.green,
-              onPressed: () => controller.pauseResume(timer),
-            ),
-          ],
-        ),
-        const SizedBox(height: ClockMetrics.buttonsBottom),
+        const Spacer(flex: 152),
       ],
     );
   }
 }
 
-/// The ring: the track, and the time left as an arc from the top, shrinking clockwise.
+/// The ring: the track, and the time left as an arc from the top, shrinking clockwise (kit
+/// `Ring`: a 356 pt oval inside the 360 pt box, stroke 6, round cap).
 class RingPainter extends CustomPainter {
-  RingPainter({
-    required this.fraction,
-    this.stroke = ClockMetrics.ringStroke,
-    this.color = ClockColors.orange,
-  });
+  RingPainter({required this.fraction, this.stroke = ClockMetrics.ringStroke});
 
   final double fraction;
   final double stroke;
-  final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final rect = (Offset.zero & size).deflate(stroke / 2);
+    final rect = (Offset.zero & size).deflate(2);
     canvas.drawOval(
       rect,
       Paint()
-        ..color = ClockColors.ringTrack
+        ..color = clockPalette.ringTrack
         ..style = PaintingStyle.stroke
         ..strokeWidth = stroke,
     );
@@ -448,7 +512,7 @@ class RingPainter extends CustomPainter {
       sweep,
       false,
       Paint()
-        ..color = color
+        ..color = clockPalette.accent
         ..style = PaintingStyle.stroke
         ..strokeWidth = stroke
         ..strokeCap = StrokeCap.round,
@@ -457,10 +521,10 @@ class RingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(RingPainter old) =>
-      old.fraction != fraction || old.color != color;
+      old.fraction != fraction || old.stroke != stroke;
 }
 
-/// The list on the left: running timers as cards, then the recent ones.
+/// The list on the left (kit `List region`): running timers as cards, then the recent ones.
 class _TimerList extends StatelessWidget {
   const _TimerList({required this.controller, required this.onSelect});
   final ClockController controller;
@@ -469,118 +533,162 @@ class _TimerList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final colors = AmalfiTheme.of(context).colors;
     final c = controller;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(10, 60, 10, 20),
-      children: [
-        for (var i = 0; i < c.timers.length; i++)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: GestureDetector(
-              key: ValueKey('timer card $i'),
-              onTap: () => onSelect(i),
-              child: Container(
-                width: ClockMetrics.timerCardSize.width,
-                height: ClockMetrics.timerCardSize.height,
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                decoration: BoxDecoration(
-                  color: ClockColors.timerCard,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            formatCountdown(c.timers[i].timer.remaining),
-                            style: thinDigits(36),
+    final recents = c.settings.recents;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(12, 16, 8, 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (var i = 0; i < c.timers.length; i++)
+            Padding(
+              padding: EdgeInsets.only(
+                bottom: i == c.timers.length - 1 ? 0 : 8,
+              ),
+              child: GestureDetector(
+                key: ValueKey('timer card $i'),
+                behavior: HitTestBehavior.opaque,
+                onTap: () => onSelect(i),
+                child: SizedBox.fromSize(
+                  size: ClockMetrics.timerCardSize,
+                  child: DecoratedBox(
+                    decoration: AmalfiShapeDecoration(
+                      color: clockPalette.timerCard,
+                      shape: AmalfiSmoothBorder(
+                        radius: ClockMetrics.cardRadius,
+                      ),
+                    ),
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          left: 16,
+                          top: 16,
+                          right: 56,
+                          height: 32,
+                          child: Text(
+                            timerDigits(c.timers[i].timer.remaining),
+                            style: AmalfiType.title1(color: colors.textPrimary)
+                                .copyWith(
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures(),
+                                  ],
+                                ),
                           ),
-                          Text(
+                        ),
+                        Positioned(
+                          left: 16,
+                          top: 56,
+                          right: 56,
+                          height: 16,
+                          child: Text(
                             c.timers[i].timer.label.isEmpty
                                 ? _durationText(l, c.timers[i].timer.duration)
                                 : c.timers[i].timer.label,
-                            style: clockText(13, color: ClockColors.secondary),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AmalfiType.callout(
+                              color: colors.textSecondary,
+                            ),
                           ),
-                        ],
-                      ),
-                    ),
-                    SizedBox.square(
-                      dimension: 40,
-                      child: CustomPaint(
-                        painter: RingPainter(
-                          fraction: c.timers[i].timer.fraction,
-                          stroke: 3,
                         ),
-                        child: Center(
-                          child: RoundButton(
+                        Positioned(
+                          right: 20,
+                          top: 28,
+                          child: ClockRoundButton(
                             key: ValueKey('timer card pause $i'),
                             symbol: c.timers[i].timer.running
                                 ? 'pause'
                                 : 'play',
-                            size: 30,
-                            fill: const Color(0x00000000),
-                            color: ClockColors.orange,
+                            semanticLabel: c.timers[i].timer.running
+                                ? l.pause
+                                : l.resume,
+                            size: 32,
+                            fill: clockPalette.accent,
                             onPressed: () => c.pauseResume(c.timers[i]),
                           ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        if (c.settings.recents.isNotEmpty) ...[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(4, 10, 4, 6),
-            child: Text(
-              l.recents,
-              style: clockText(13, weight: FontWeight.w600),
-            ),
-          ),
-          for (final r in c.settings.recents)
-            Container(
-              height: 64,
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: ClockColors.line)),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          formatCountdown(r.duration),
-                          style: thinDigits(28, color: ClockColors.secondary),
-                        ),
-                        Text(
-                          r.label.isEmpty
-                              ? _durationText(l, r.duration)
-                              : r.label,
-                          style: clockText(12, color: ClockColors.secondary),
                         ),
                       ],
                     ),
                   ),
-                  RoundButton(
-                    key: ValueKey('recent ${r.duration.inSeconds} ${r.label}'),
-                    symbol: 'play',
-                    size: 30,
-                    fill: const Color(0x3330D159),
-                    color: ClockColors.green,
-                    onPressed: () => c.startTimer(r.duration, label: r.label),
-                  ),
-                ],
+                ),
               ),
             ),
+          if (recents.isNotEmpty) ...[
+            if (c.timers.isNotEmpty) const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: Text(
+                l.recents,
+                style: AmalfiType.headline(color: colors.textTertiary),
+              ),
+            ),
+            const SizedBox(height: 14),
+            for (final r in recents)
+              SizedBox(
+                width: 288,
+                height: 56,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        top: 0,
+                        height: 1,
+                        child: ColoredBox(color: colors.lineSeparator),
+                      ),
+                      Positioned(
+                        left: 0,
+                        top: 8,
+                        right: 36,
+                        height: 22,
+                        child: Text(
+                          timerDigits(r.duration),
+                          style: AmalfiType.title3(color: colors.textSecondary)
+                              .copyWith(
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures(),
+                                ],
+                              ),
+                        ),
+                      ),
+                      Positioned(
+                        left: 0,
+                        top: 30,
+                        right: 36,
+                        height: 16,
+                        child: Text(
+                          r.label.isEmpty
+                              ? _durationText(l, r.duration)
+                              : r.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AmalfiType.callout(color: colors.textTertiary),
+                        ),
+                      ),
+                      Positioned(
+                        right: 4,
+                        top: 8,
+                        child: ClockRoundButton(
+                          key: ValueKey(
+                            'recent ${r.duration.inSeconds} ${r.label}',
+                          ),
+                          symbol: 'play',
+                          semanticLabel: l.start,
+                          fill: clockPalette.start,
+                          onPressed: () =>
+                              c.startTimer(r.duration, label: r.label),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }

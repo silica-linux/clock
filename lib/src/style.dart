@@ -1,105 +1,109 @@
-// Colors, sizes and type of the Clock app, measured in CL-01 (silica-reference `clock.md`).
-// The app is always dark: the measured light and dark captures are pixel-identical.
+// Metrics and colors of the Clock app on the Amalfi design system (silica-design kit page
+// `App · Clock`, masters `Apps/Clock/*`). Every colour is a token: the app palette
+// `App/Clock/*` (dark only: the app looks the same in both system appearances) and the shared
+// ones (`Text/*`, `Line/*`, `Surface/*`). Timings and curves stay the measured ones (CL-01).
 
 import 'package:flutter/widgets.dart';
 import 'package:silica_ui/silica_ui.dart';
 
-abstract final class ClockColors {
-  static const Color background = Color(0xFF1E1E1E);
-  static const Color text = Color(0xFFFFFFFF);
-  static const Color secondary = Color(0xFF8E8E93);
-  static const Color dimmed = Color(0xFF6A6A6A);
+/// The palette of the app (`App/Clock/*`, dark).
+const AmalfiClockColors clockPalette = AmalfiClockColors.dark;
 
-  /// The gray texts of an alarm card, and all of them when the alarm is off (CL-09).
-  static const Color alarmMinor = Color(0xFFA2A2A2);
+/// The shared dark tokens: the app is always dark.
+final AmalfiColors darkColors = AmalfiColors.dark;
 
-  /// The pop-up button at the minimum width: track and outer rim.
-  static const Color track = Color(0xFF3D3D3D);
-  static const Color rimOuter = Color(0xFF0B0B0B);
+/// The faces of the world cards: white by day, `Surface/Sunken` by night; the numerals and
+/// hands take the opposite one (kit `City Card Day` and `City Card Night`).
+abstract final class ClockFace {
+  static const Color dayFace = Color(0xFFFFFFFF);
+  static Color get nightFace => darkColors.surfaceSunken;
+  static Color get dayInk => darkColors.textOnAccent;
+  static const Color nightInk = Color(0xFFFFFFFF);
+}
 
-  /// Hover highlight of a segment and of the round buttons: *provisional* (CL-01 notes a hover
-  /// state but did not capture its color).
-  static const Color hover = Color(0x14FFFFFF);
-
-  /// Cards (world clocks, alarms) and the timer list.
-  static const Color card = Color(0xFF323232);
-  static const Color timerCard = Color(0xFF48484A);
-  static const Color sheet = Color(0xFF272727);
-  static const Color line = Color(0xFF343434);
-  static const Color lapHeader = Color(0xFF565656);
-
-  /// Accents (sRGB).
-  static const Color orange = Color(0xFFFF9230);
-  static const Color green = Color(0xFF30D159);
-  static const Color red = Color(0xFFFF4245);
-  static const Color switchOn = Color(0xFFF49C40);
-  static const Color switchKnobOn = Color(0xFFFEF0E3);
-  static const Color switchOff = Color(0xFF454545);
-  static const Color switchKnobOff = Color(0xFFE3E3E3);
-  static const Color ringTrack = Color(0xFF3B3B3D);
-
-  /// Capsule buttons: neutral, disabled.
-  static const Color button = Color(0xFF2F2F2F);
-  static const Color buttonDisabled = Color(0xFF262626);
-  static const Color emptySymbol = Color(0xFF9A9A9A);
-  static const Color emptyText = Color(0xFFDDDDDD);
-  static const Color pickerDigits = Color(0xFFDDDDDD);
-  static const Color pickerUnits = Color(0xFF989898);
+/// The map, drawn in the app (the kit shows an image): black oceans and gray land.
+abstract final class ClockMap {
+  static const Color ocean = Color(0xFF000000);
+  static const Color land = Color(0xFF2C2C2E);
+  static const Color zoneLine = Color(0x14FFFFFF);
+  static const Color night = Color(0x66000000);
+  static const Color boundary = Color(0xB3FFFFFF);
 }
 
 abstract final class ClockMetrics {
-  static const Size window = Size(1024, 768);
+  /// The kit window (1024 × 800 with the 52 pt toolbar); the smallest size shows every
+  /// section (CL-13).
+  static const Size window = Size(1024, 800);
   static const Size minWindow = Size(690, 640);
 
-  static const double controlHeight = 36;
+  /// The toolbar's round "+" is a piece of 44 pt (4 + 32 + 8), kept as an empty slot in the
+  /// stopwatch so that the section control does not move between sections.
+  static const double addPiece = 44;
 
-  /// The control sits 3 pt right of the center of its area, with or without the timer list
-  /// (CL-01, CL-06: ink 327–702 and 487–862 at 1024 pt).
-  static const double controlShift = 3;
-  static const List<double> segmentWidths = [95, 94, 95, 94];
-  static double get controlWidth => segmentWidths.fold(0, (a, b) => a + b);
-  static const double plusButton = 36;
+  /// The window controls are drawn by Ossido over the toolbar: a 96 pt slot (kit piece
+  /// `Controls`).
+  static const double controlsPiece = AmalfiToolbarPieceMetrics.controlsWidth;
 
-  /// The world map has no fixed size: full window width, height 0.488 x width (CLOCK-WORLD,
-  /// #95); the gap below it is provisional.
-  static const double worldMapRatio = 0.488;
-  static const double worldMapGap = 15;
+  /// The trailing padding of the toolbar after the `Add` piece (which ends with 8): the kit
+  /// has the button end 16 pt from the window's edge (components.md).
+  static const double toolbarTrailing = 8;
 
-  static const double worldCardHeight = 222;
+  /// The window-button slot starts 4 pt inside the bar (kit piece `Controls` at x 4).
+  static const double toolbarLeading = 4;
+
+  /// The world map: full width, 480 pt at 1024 pt, the map centred on the equator (the
+  /// pins of the kit sit at `240 - latitude * width / 360`). The gap below it is 16.
+  static const double worldMapRatio = 480 / 1024;
+  static const double mapGap = 16;
+
+  static const double worldCardHeight = 220;
   static const double worldCardMinWidth = 160;
-  static const Size alarmCard = Size(186, 181);
-  static const double cardPitch = 202;
-  static const double cardsLeft = 15;
+  static const double alarmCardHeight = 180;
+  static const double cardGap = 16;
+  static const double cardsMargin = 20;
   static const double cardRadius = 12;
   static const double face = 120;
   static const double faceTop = 20;
 
-  static const double stopwatchTop = 87;
+  /// Pins: an 8 pt dot, the name and the time 8 pt from its centre.
+  static const double pinRadius = 4;
+
+  /// The digits of the big numerals are positioned by the centre of their figures, measured
+  /// on the kit's PNG (Sketch's fixed 40 pt line box makes the frames of the masters
+  /// meaningless for the large sizes): the stopwatch's 104 centre is at 121 in the window.
+  static const double stopwatchDigitsCenter =
+      121 - AmalfiToolbarMetrics.toolbarHeight;
+  static const double lapsTop = 296 - AmalfiToolbarMetrics.toolbarHeight;
   static const double lapsWidth = 320;
-  static const double lapRow = 31;
-  static const Size capsuleButton = Size(150, 28);
-  static const double capsuleGap = 20;
+  static const double lapsRow = 32;
+  static const double lapsHeader = 21;
 
-  /// Distance of the capsule buttons from the bottom of a 768 pt window (top at +690).
-  static const double buttonsBottom = 768 - 690 - 28;
+  /// Capsule buttons are 28 tall; 72 wide for Cancel/Pause, 68 for Lap/Start/Stop, 96 apart.
+  static const double buttonHeight = 28;
+  static const double buttonWide = 72;
+  static const double buttonNarrow = 68;
+  static const double buttonsGap = 96;
 
-  static const double timerSidebar = 320;
+  /// The stopwatch buttons end 68 pt above the bottom of a 800 pt window.
+  static const double stopwatchButtonsBottom = 800 - 704 - 28;
+
+  static const double timerSidebar = AmalfiWindowMetrics.listWidth;
   static const Size timerCardSize = Size(300, 92);
   static const double ring = 360;
   static const double ringStroke = 6;
 }
 
-/// The card grid of the world clocks and the alarms (CLOCK-WORLD, #95, measured): 15 pt side
-/// margins and gaps, as many columns as fit with each card at least ~160 pt wide, the cards
-/// sharing the row (186 pt at 1024 pt, 210 at 690). The columns follow the window width, never
-/// the number of cards.
+/// The card grid of the world clocks and the alarms (CLOCK-WORLD, #95, measured): the side
+/// margins and gaps of the kit (20 and 16), as many columns as fit with each card at least
+/// ~160 pt wide, the cards sharing the row (184 pt at 1024 pt). The columns follow the window
+/// width, never the number of cards.
 class CardGrid {
   const CardGrid(this.columns, this.cardWidth);
 
-  static const double gap = 15;
+  static const double gap = ClockMetrics.cardGap;
 
   factory CardGrid.of(double width) {
-    const margin = ClockMetrics.cardsLeft;
+    const margin = ClockMetrics.cardsMargin;
     final usable = width - 2 * margin;
     var n = 1;
     while ((usable - n * gap) / (n + 1) >= ClockMetrics.worldCardMinWidth) {
@@ -112,41 +116,16 @@ class CardGrid {
   final double cardWidth;
 }
 
-/// Text in Inter (silica_ui), white by default.
-TextStyle clockText(
-  double size, {
-  Color color = ClockColors.text,
-  FontWeight? weight,
-}) => TextStyle(
-  fontFamily: uiFontFamily,
-  package: 'silica_ui',
-  fontSize: size,
-  fontWeight: weight,
-  color: color,
-  height: 1.2,
-);
-
-/// Thin digits (Inter variable at weight 200), tabular so the time does not dance.
-TextStyle thinDigits(
-  double size, {
-  Color color = ClockColors.text,
-  double weight = 200,
-}) => TextStyle(
-  fontFamily: 'InterVariable',
-  fontSize: size,
-  color: color,
-  height: 1,
-  fontVariations: [FontVariation('wght', weight)],
-  fontFeatures: const [FontFeature.tabularFigures()],
-);
-
-/// Semibold tabular figures (lap times, card times).
-TextStyle tabular(
-  double size, {
-  Color color = ClockColors.text,
-  FontWeight weight = FontWeight.w600,
-}) => clockText(
-  size,
-  color: color,
-  weight: weight,
-).copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
+/// The big numerals (Numeral 40/64/72/104, Inter regular): the box is the font size tall so
+/// that the figures sit at its centre, and the digits are tabular where they change.
+TextStyle numeral(double size, {Color? color, bool tabular = false}) =>
+    switch (size) {
+      40 => AmalfiType.numeral40(color: color),
+      64 => AmalfiType.numeral64(color: color),
+      72 => AmalfiType.numeral72(color: color),
+      104 => AmalfiType.numeral104(color: color),
+      _ => throw ArgumentError('no Numeral $size token'),
+    }.copyWith(
+      height: 1,
+      fontFeatures: tabular ? const [FontFeature.tabularFigures()] : null,
+    );

@@ -15,7 +15,7 @@ import 'src/time/tzif.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   // The toolbar is unified with the window: Ossido draws only the window buttons.
-  SilicaWindow.setFullSizeContent(toolbarHeight).ignore();
+  SilicaWindow.setFullSizeContent(AmalfiToolbarMetrics.toolbarHeight).ignore();
   // The smallest window that still shows every section (CL-13); no maximum.
   SilicaWindow.setSizeLimits(min: ClockMetrics.minWindow).ignore();
   // A single-window app: it quits with its window and comes back in the same place

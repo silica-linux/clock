@@ -1,120 +1,343 @@
-// Controls shared by the sections: capsule buttons, the switch, a sheet over the window and the
-// system symbols of silica-icons.
+// Controls of the app that the kit draws with an app colour and silica_ui does not offer
+// with one (the capsule buttons, the round play/pause buttons, the switch) and the sheet
+// over the window. Everything else (fields, pop-ups, the checkbox, the toolbar) is
+// silica_ui's.
 
-import 'dart:io';
-
-import 'package:flutter/gestures.dart' show kPrimaryButton;
 import 'package:flutter/widgets.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:silica_ui/silica_ui.dart';
 
 import 'style.dart';
 
-/// Whether the window is the active one (from `flutter/lifecycle`), for the inactive colors.
-class WindowActive extends InheritedWidget {
-  const WindowActive({super.key, required this.active, required super.child});
-  final bool active;
-
-  static bool of(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<WindowActive>()?.active ??
-      true;
-
-  @override
-  bool updateShouldNotify(WindowActive old) => old.active != active;
+/// The pressed fill of a capsule (CL-02): green, red and gray as measured; other colours
+/// (orange) lighten the same way (*provisional*, not measured).
+Color pressedFill(Color color) {
+  if (color == clockPalette.start) return const Color(0xFF4CD669);
+  if (color == clockPalette.stop) return const Color(0xFFFF5858);
+  if (color == clockPalette.lapButton) return const Color(0xFF434343);
+  return Color.lerp(color, const Color(0xFFFFFFFF), 0.1)!;
 }
 
-/// A symbol of silica-icons (`$SILICA_ICONS_DIR/symbols/regular/<name>.svg`) in `color`; empty
-/// if the icons are not installed.
-class ClockSymbol extends StatelessWidget {
-  const ClockSymbol(
-    this.name, {
-    super.key,
-    required this.size,
-    required this.color,
-  });
-  final String name;
-  final double size;
-  final Color color;
-
-  static String? directory = Platform.environment['SILICA_ICONS_DIR'];
-
-  @override
-  Widget build(BuildContext context) {
-    final dir = directory;
-    final file = dir == null ? null : File('$dir/symbols/regular/$name.svg');
-    if (file == null || !file.existsSync()) {
-      return SizedBox(width: size, height: size);
-    }
-    return SvgPicture.file(
-      file,
-      width: size,
-      height: size,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  }
-}
-
-/// The pressed fill of a capsule (CL-02): green, red and gray as measured; other colors
-/// (orange) lighten the same way (*provisional*).
-Color pressedFill(Color color) => switch (color) {
-  ClockColors.green => const Color(0xFF4CD669),
-  ClockColors.red => const Color(0xFFFF5858),
-  ClockColors.button => const Color(0xFF434343),
-  _ => Color.lerp(color, const Color(0xFFFFFFFF), 0.1)!,
-};
-
-/// A 150 × 28 capsule button (CL-01, CL-02): filled, white label; no hover; pressed, the whole
-/// capsule takes the pressed fill in the first frame, without a fade, and the action fires on
-/// release.
-class CapsuleButton extends StatefulWidget {
-  const CapsuleButton({
+/// A capsule push button of the kit with an app fill (`Buttons/Push/Primary` with a colour
+/// override: Start, Stop, Pause, Save; `Buttons/Push/Secondary` with `App/Clock/Lap Button`:
+/// Lap, Cancel): [AmalfiPushButton] cannot take a colour (silica-ui gap, reported).
+///
+/// 28 tall, [width] wide at least (72 or 68, grows with a long label, on the 4 pt grid),
+/// Body Emphasis label. Pressed, the whole capsule takes the pressed fill at once and the
+/// action fires on release (CL-02). Disabled: the whole button at 35 %.
+class ClockButton extends StatelessWidget {
+  const ClockButton({
     super.key,
     required this.label,
-    required this.color,
-    this.onPressed,
-    this.width = 150,
-    this.height = 28,
+    required this.onPressed,
+    this.fill,
+    this.width = ClockMetrics.buttonNarrow,
   });
 
   final String label;
-  final Color color;
   final VoidCallback? onPressed;
+
+  /// The fill (`App/Clock/Start`, `Stop`, `Accent`); null: the secondary look (`Lap Button`
+  /// with a border and the control shadow).
+  final Color? fill;
   final double width;
-  final double height;
-
-  @override
-  State<CapsuleButton> createState() => _CapsuleButtonState();
-}
-
-class _CapsuleButtonState extends State<CapsuleButton> {
-  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
-    final enabled = widget.onPressed != null;
-    final fill = !enabled
-        ? ClockColors.buttonDisabled
-        : _pressed
-        ? pressedFill(widget.color)
-        : widget.color;
-    return GestureDetector(
-      onTapDown: enabled ? (_) => setState(() => _pressed = true) : null,
-      onTapUp: enabled ? (_) => setState(() => _pressed = false) : null,
-      onTapCancel: () => setState(() => _pressed = false),
-      onTap: widget.onPressed,
-      child: Container(
-        width: widget.width,
-        height: widget.height,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: fill,
-          borderRadius: BorderRadius.circular(widget.height / 2),
+    final colors = AmalfiTheme.of(context).colors;
+    final secondary = fill == null;
+    final base = fill ?? clockPalette.lapButton;
+    final content = secondary ? colors.textPrimary : colors.textOnAccent;
+    const height = ClockMetrics.buttonHeight;
+    return AmalfiInteraction(
+      onActivate: onPressed,
+      activators: AmalfiInteraction.buttonActivates,
+      builder: (context, state) {
+        final color = state.pressed ? pressedFill(base) : base;
+        final shape = AmalfiSmoothBorder(
+          radius: height / 2,
+          side: secondary
+              ? BorderSide(
+                  color: colors.lineBorder,
+                  strokeAlign: BorderSide.strokeAlignInside,
+                )
+              : BorderSide.none,
+        );
+        return Opacity(
+          opacity: state.enabled ? 1 : AmalfiStates.disabledOpacity,
+          child: Semantics(
+            button: true,
+            enabled: state.enabled,
+            label: label,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                ConstrainedBox(
+                  constraints: BoxConstraints(minWidth: width),
+                  child: DecoratedBox(
+                    decoration: AmalfiShapeDecoration(
+                      color: color,
+                      shape: shape,
+                      shadows: secondary ? amalfiControlShadows(colors) : null,
+                    ),
+                    child: Stack(
+                      children: [
+                        if (state.hovered && !state.pressed)
+                          Positioned.fill(
+                            child: DecoratedBox(
+                              decoration: ShapeDecoration(
+                                color: colors.stateHoverOverlay,
+                                shape: shape,
+                              ),
+                            ),
+                          ),
+                        SizedBox(
+                          height: height,
+                          child: Center(
+                            widthFactor: 1,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
+                              child: Text(
+                                label,
+                                maxLines: 1,
+                                softWrap: false,
+                                style: AmalfiType.bodyEmphasis(color: content),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (state.focused)
+                  Positioned.fill(child: AmalfiFocusHalo(radius: height / 2)),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// A glyph of silica-icons with a drawn fallback (the play and pause shapes) while the icons
+/// are not installed.
+class ClockGlyph extends StatelessWidget {
+  const ClockGlyph(this.name, {super.key, required this.size, this.color});
+  final String name;
+  final double size;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) => AmalfiSymbol(
+    name,
+    size: size,
+    color: color,
+    fallback: SizedBox.square(
+      dimension: size,
+      child: CustomPaint(
+        painter: _FallbackGlyph(
+          name,
+          color ?? IconTheme.of(context).color ?? const Color(0xFFFFFFFF),
         ),
-        child: Text(
-          widget.label,
-          style: clockText(
-            13,
-            weight: FontWeight.w600,
-            color: enabled ? ClockColors.text : ClockColors.dimmed,
+      ),
+    ),
+  );
+}
+
+class _FallbackGlyph extends CustomPainter {
+  _FallbackGlyph(this.name, this.color);
+  final String name;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = color;
+    final w = size.width, h = size.height;
+    switch (name) {
+      case 'play':
+        canvas.drawPath(
+          Path()
+            ..moveTo(w * 0.28, h * 0.18)
+            ..lineTo(w * 0.8, h * 0.5)
+            ..lineTo(w * 0.28, h * 0.82)
+            ..close(),
+          paint,
+        );
+      case 'pause':
+        canvas
+          ..drawRRect(
+            RRect.fromLTRBR(
+              w * 0.26,
+              h * 0.2,
+              w * 0.44,
+              h * 0.8,
+              Radius.circular(w * 0.04),
+            ),
+            paint,
+          )
+          ..drawRRect(
+            RRect.fromLTRBR(
+              w * 0.56,
+              h * 0.2,
+              w * 0.74,
+              h * 0.8,
+              Radius.circular(w * 0.04),
+            ),
+            paint,
+          );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_FallbackGlyph old) =>
+      old.name != name || old.color != color;
+}
+
+/// A round icon button of the kit (`Buttons/Icon/Round`) with an app fill: the play and
+/// pause of the timer list. [size] 28 (Regular) or 32 (Large); the glyph is 16, dark on the
+/// colour.
+class ClockRoundButton extends StatelessWidget {
+  const ClockRoundButton({
+    super.key,
+    required this.symbol,
+    required this.semanticLabel,
+    required this.fill,
+    required this.onPressed,
+    this.size = 28,
+  });
+
+  final String symbol;
+  final String semanticLabel;
+  final Color fill;
+  final VoidCallback? onPressed;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AmalfiTheme.of(context).colors;
+    return AmalfiInteraction(
+      onActivate: onPressed,
+      activators: AmalfiInteraction.buttonActivates,
+      builder: (context, state) {
+        final shape = AmalfiSmoothBorder(radius: size / 2);
+        return Opacity(
+          opacity: state.enabled ? 1 : AmalfiStates.disabledOpacity,
+          child: Semantics(
+            button: true,
+            enabled: state.enabled,
+            label: semanticLabel,
+            child: SizedBox.square(
+              dimension: size,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: AmalfiShapeDecoration(
+                        color: state.pressed ? pressedFill(fill) : fill,
+                        shape: shape,
+                      ),
+                    ),
+                  ),
+                  if (state.hovered && !state.pressed)
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: ShapeDecoration(
+                          color: colors.stateHoverOverlay,
+                          shape: shape,
+                        ),
+                      ),
+                    ),
+                  Center(
+                    child: ClockGlyph(
+                      symbol,
+                      size: AmalfiControlSize.regular.iconSize,
+                      color: colors.surfaceSunken,
+                    ),
+                  ),
+                  if (state.focused)
+                    Positioned.fill(child: AmalfiFocusHalo(radius: size / 2)),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// The alarm switch: the kit's `Toggles/Switch/Regular` (40 × 24 track, 20 pt thumb 2 pt
+/// inside it) with `App/Clock/Switch On` as the on colour. The thumb slides in 180 ms
+/// (CL-09); `silica_ui`'s switch cannot take an app colour (reported).
+class ClockSwitch extends StatelessWidget {
+  const ClockSwitch({
+    super.key,
+    required this.value,
+    required this.onChanged,
+    this.semanticLabel,
+  });
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final String? semanticLabel;
+
+  static const Size size = Size(40, 24);
+  static const double thumb = 20;
+  static const double inset = 2;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AmalfiTheme.of(context).colors;
+    return AmalfiInteraction(
+      onActivate: () => onChanged(!value),
+      builder: (context, state) => Semantics(
+        toggled: value,
+        label: semanticLabel,
+        child: SizedBox.fromSize(
+          size: size,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned.fill(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  decoration: AmalfiShapeDecoration(
+                    color: value ? clockPalette.switchOn : colors.surfaceSunken,
+                    shape: AmalfiSmoothBorder(
+                      radius: size.height / 2,
+                      side: value
+                          ? BorderSide.none
+                          : BorderSide(
+                              color: colors.lineBorder,
+                              strokeAlign: BorderSide.strokeAlignInside,
+                            ),
+                    ),
+                  ),
+                ),
+              ),
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeInOut,
+                left: value ? size.width - inset - thumb : inset,
+                top: inset,
+                width: thumb,
+                height: thumb,
+                child: DecoratedBox(
+                  decoration: AmalfiShapeDecoration(
+                    color: colors.textOnAccent,
+                    shape: AmalfiSmoothBorder(radius: thumb / 2),
+                    shadows: amalfiControlShadows(colors),
+                  ),
+                ),
+              ),
+              if (state.focused)
+                Positioned.fill(
+                  child: AmalfiFocusHalo(radius: size.height / 2),
+                ),
+            ],
           ),
         ),
       ),
@@ -122,109 +345,9 @@ class _CapsuleButtonState extends State<CapsuleButton> {
   }
 }
 
-/// A round button with a symbol (the "+" of the toolbar, the timer list play and pause).
-class RoundButton extends StatefulWidget {
-  const RoundButton({
-    super.key,
-    required this.symbol,
-    required this.onPressed,
-    this.size = 36,
-    this.fill = ClockColors.track,
-    this.hoverFill,
-    this.color = ClockColors.text,
-    this.actOnPress = false,
-  });
-
-  final String symbol;
-  final VoidCallback? onPressed;
-  final double size;
-  final Color fill;
-
-  /// The fill under the pointer (the toolbar "+": `#515152`, CL-02); null: a light veil.
-  final Color? hoverFill;
-  final Color color;
-
-  /// Acts on mouse down (the toolbar "+", CL-02) instead of on release.
-  final bool actOnPress;
-
-  @override
-  State<RoundButton> createState() => _RoundButtonState();
-}
-
-class _RoundButtonState extends State<RoundButton> {
-  bool _hover = false;
-
-  @override
-  Widget build(BuildContext context) => MouseRegion(
-    onEnter: (_) => setState(() => _hover = true),
-    onExit: (_) => setState(() => _hover = false),
-    // On press the button acts on the pointer down itself, ahead of any gesture arena.
-    child: Listener(
-      onPointerDown: widget.actOnPress && widget.onPressed != null
-          ? (e) {
-              if (e.buttons == kPrimaryButton) widget.onPressed!();
-            }
-          : null,
-      child: GestureDetector(
-        onTap: widget.actOnPress ? null : widget.onPressed,
-        child: Container(
-          width: widget.size,
-          height: widget.size,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: _hover
-                ? widget.hoverFill ??
-                      Color.alphaBlend(ClockColors.hover, widget.fill)
-                : widget.fill,
-            shape: BoxShape.circle,
-          ),
-          child: ClockSymbol(
-            widget.symbol,
-            size: widget.size * 0.5,
-            color: widget.color,
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
-/// The alarm switch (CL-09): a 54 × 24 track, orange when on and gray when off, with a
-/// 32 × 20 capsule knob.
-class ClockSwitch extends StatelessWidget {
-  const ClockSwitch({super.key, required this.value, required this.onChanged});
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  static const Size size = Size(54, 24);
-  static const Size knob = Size(32, 20);
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: () => onChanged(!value),
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      width: size.width,
-      height: size.height,
-      padding: const EdgeInsets.all(2),
-      alignment: value ? Alignment.centerRight : Alignment.centerLeft,
-      decoration: BoxDecoration(
-        color: value ? ClockColors.switchOn : ClockColors.switchOff,
-        borderRadius: BorderRadius.circular(size.height / 2),
-      ),
-      child: Container(
-        width: knob.width,
-        height: knob.height,
-        decoration: BoxDecoration(
-          color: value ? ClockColors.switchKnobOn : ClockColors.switchKnobOff,
-          borderRadius: BorderRadius.circular(knob.height / 2),
-        ),
-      ),
-    ),
-  );
-}
-
-/// A sheet centered over the window, with the window behind dimmed.
+/// A sheet centred over the window (kit `Alarm Editor`): the window behind dimmed with
+/// `Surface/Sunken` at 60 %, the sheet `App/Clock/Sheet` with a 1 pt border, radius 20 and a
+/// 0 / 12 / 32 shadow.
 class Sheet extends StatelessWidget {
   const Sheet({
     super.key,
@@ -238,138 +361,45 @@ class Sheet extends StatelessWidget {
   final VoidCallback onDismiss;
 
   @override
-  Widget build(BuildContext context) => Stack(
-    children: [
-      Positioned.fill(
-        child: GestureDetector(
-          onTap: onDismiss,
-          child: const ColoredBox(color: Color(0x66000000)),
-        ),
-      ),
-      Center(
-        child: Container(
-          width: size.width,
-          height: size.height,
-          decoration: BoxDecoration(
-            color: ClockColors.sheet,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFF3D3D3D)),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x80000000),
-                blurRadius: 40,
-                offset: Offset(0, 16),
-              ),
-            ],
-          ),
-          child: child,
-        ),
-      ),
-    ],
-  );
-}
-
-/// A one-line text field with the orange focus ring of the sheets.
-class ClockTextField extends StatefulWidget {
-  const ClockTextField({
-    super.key,
-    required this.controller,
-    required this.placeholder,
-    this.width = 224,
-    this.height = 26,
-    this.autofocus = false,
-    this.onSubmitted,
-    this.onChanged,
-    this.leading,
-    this.bordered = true,
-  });
-
-  final TextEditingController controller;
-  final String placeholder;
-  final double width;
-  final double height;
-  final bool autofocus;
-  final ValueChanged<String>? onSubmitted;
-  final ValueChanged<String>? onChanged;
-  final Widget? leading;
-
-  /// False: plain text on the background, as the label of the timer picker (CL-05).
-  final bool bordered;
-
-  @override
-  State<ClockTextField> createState() => _ClockTextFieldState();
-}
-
-class _ClockTextFieldState extends State<ClockTextField> {
-  final FocusNode _focus = FocusNode();
-
-  @override
-  void initState() {
-    super.initState();
-    _focus.addListener(() => setState(() {}));
-    widget.controller.addListener(_changed);
-  }
-
-  void _changed() => setState(() {});
-
-  @override
-  void dispose() {
-    widget.controller.removeListener(_changed);
-    _focus.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: _focus.requestFocus,
-    child: Container(
-      width: widget.width,
-      height: widget.height,
-      padding: EdgeInsets.symmetric(horizontal: widget.bordered ? 8 : 11),
-      decoration: widget.bordered
-          ? BoxDecoration(
-              color: const Color(0xFF1E1E1E),
-              borderRadius: BorderRadius.circular(widget.height / 2.6),
-              border: Border.all(
-                color: _focus.hasFocus
-                    ? ClockColors.orange
-                    : const Color(0xFF3D3D3D),
-                width: _focus.hasFocus ? 2 : 1,
-              ),
-            )
-          : null,
-      child: Row(
-        children: [
-          ?widget.leading,
-          if (widget.leading != null) const SizedBox(width: 6),
-          Expanded(
-            child: Stack(
-              alignment: Alignment.centerLeft,
-              children: [
-                if (widget.controller.text.isEmpty)
-                  Text(
-                    widget.placeholder,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: clockText(13, color: ClockColors.dimmed),
-                  ),
-                EditableText(
-                  controller: widget.controller,
-                  focusNode: _focus,
-                  autofocus: widget.autofocus,
-                  style: clockText(13),
-                  cursorColor: ClockColors.orange,
-                  backgroundCursorColor: ClockColors.text,
-                  selectionColor: const Color(0x66FF9230),
-                  maxLines: 1,
-                  onSubmitted: widget.onSubmitted,
-                  onChanged: widget.onChanged,
-                ),
-              ],
+  Widget build(BuildContext context) {
+    final colors = AmalfiTheme.of(context).colors;
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: GestureDetector(
+            key: const ValueKey('scrim'),
+            onTap: onDismiss,
+            child: ColoredBox(
+              color: colors.surfaceSunken.withValues(alpha: 0.6),
             ),
           ),
-        ],
-      ),
-    ),
-  );
+        ),
+        Center(
+          child: SizedBox.fromSize(
+            size: size,
+            child: DecoratedBox(
+              decoration: AmalfiShapeDecoration(
+                color: clockPalette.sheet,
+                shape: AmalfiSmoothBorder(
+                  radius: AmalfiRadii.sheetAlert,
+                  side: BorderSide(
+                    color: colors.lineBorder,
+                    strokeAlign: BorderSide.strokeAlignInside,
+                  ),
+                ),
+                shadows: const [
+                  BoxShadow(
+                    color: Color(0x66000000),
+                    blurRadius: 32,
+                    offset: Offset(0, 12),
+                  ),
+                ],
+              ),
+              child: child,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }

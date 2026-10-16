@@ -194,6 +194,12 @@ abstract class AppLocalizations {
   /// **'{day}, {offset} h'**
   String hoursOffset(String day, String offset);
 
+  /// Sunrise and sunset times on a world clock card
+  ///
+  /// In en, this message translates to:
+  /// **'Rise {rise} · Set {set}'**
+  String sunTimes(String rise, String set);
+
   /// World section without cards
   ///
   /// In en, this message translates to:
@@ -203,19 +209,19 @@ abstract class AppLocalizations {
   /// Empty state of the alarms
   ///
   /// In en, this message translates to:
-  /// **'No Alarms'**
+  /// **'No alarms'**
   String get noAlarms;
 
   /// Title of the alarm editor
   ///
   /// In en, this message translates to:
-  /// **'New Alarm'**
+  /// **'New alarm'**
   String get newAlarm;
 
   /// No description provided for @editAlarm.
   ///
   /// In en, this message translates to:
-  /// **'Edit Alarm'**
+  /// **'Edit alarm'**
   String get editAlarm;
 
   /// Label of an alarm without one
@@ -295,18 +301,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Weekends'**
   String get repeatWeekends;
-
-  /// No description provided for @repeatSummary.
-  ///
-  /// In en, this message translates to:
-  /// **'Repeat: {days}'**
-  String repeatSummary(String days);
-
-  /// No description provided for @soundSummary.
-  ///
-  /// In en, this message translates to:
-  /// **'Sound: {sound}'**
-  String soundSummary(String sound);
 
   /// One letter per day, Monday first
   ///
@@ -413,19 +407,19 @@ abstract class AppLocalizations {
   /// Labels above the timer picker
   ///
   /// In en, this message translates to:
-  /// **'h'**
+  /// **'Hours'**
   String get unitHours;
 
   /// No description provided for @unitMinutes.
   ///
   /// In en, this message translates to:
-  /// **'min'**
+  /// **'Minutes'**
   String get unitMinutes;
 
   /// No description provided for @unitSeconds.
   ///
   /// In en, this message translates to:
-  /// **'sec'**
+  /// **'Seconds'**
   String get unitSeconds;
 
   /// Placeholder of the timer label and default name

@@ -1,6 +1,7 @@
-// The Alarms section (CL-01): an empty state (alarm symbol and a bold line, centered), the
-// alarms as 186 × 181 cards on the world-clock grid with a switch (orange on, gray off: the
-// whole card dims), and the 514 × 391 editor sheet.
+// The Alarms section (kit `Apps/Clock/Alarms`, `Alarms Empty`, `Alarm Editor`): an empty state
+// (alarm symbol and a Title 2 line, centred), the alarms as 184 × 180 cards on the world-clock
+// grid with a switch (orange on, the whole card dims when off), and the 512 × 392 editor sheet
+// over the window.
 
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -30,154 +31,92 @@ String repeatText(AppLocalizations l, Set<int> days) {
   ].join(', ');
 }
 
-class AlarmsView extends StatefulWidget {
-  const AlarmsView({super.key, required this.controller});
+class AlarmsView extends StatelessWidget {
+  const AlarmsView({super.key, required this.controller, required this.onEdit});
   final ClockController controller;
 
-  @override
-  State<AlarmsView> createState() => AlarmsViewState();
-}
+  /// A card was tapped: open the editor for that alarm.
+  final ValueChanged<Alarm> onEdit;
 
-class AlarmsViewState extends State<AlarmsView> {
-  Alarm? _editing;
-  OverlayEntry? _menu;
-
-  /// Opens the editor for a new alarm at the current time.
-  void addAlarm() {
-    final now = widget.controller.now();
-    setState(
-      () => _editing = Alarm(
-        id: widget.controller.settings.nextAlarmId(),
-        hour: now.hour,
-        minute: now.minute,
-      ),
-    );
-  }
-
-  void _openMenu(Alarm alarm, Offset at) {
-    final overlay = Overlay.maybeOf(context);
-    if (overlay == null) return;
+  void _openMenu(BuildContext context, Alarm alarm, Offset at) {
     final l = AppLocalizations.of(context);
-    _menu?.remove();
-    _menu = OverlayEntry(
-      builder: (_) => Positioned.fill(
-        child: MenuHost(
-          anchor: at,
-          opaque: true,
-          entries: [
-            MenuAction(
-              l.toggleAlarm,
-              onSelected: () => widget.controller.toggleAlarm(alarm),
-            ),
-            MenuAction(
-              l.deleteAlarm,
-              onSelected: () => widget.controller.deleteAlarm(alarm.id),
-            ),
-          ],
-          onDismissed: () {
-            _menu?.remove();
-            _menu = null;
-          },
+    showAmalfiMenu(
+      context: context,
+      position: at,
+      entries: [
+        AmalfiMenuAction(
+          l.toggleAlarm,
+          onSelected: () => controller.toggleAlarm(alarm),
         ),
-      ),
-    );
-    overlay.insert(_menu!);
-  }
-
-  @override
-  void dispose() {
-    _menu?.remove();
-    super.dispose();
+        AmalfiMenuAction(
+          l.deleteAlarm,
+          destructive: true,
+          onSelected: () => controller.deleteAlarm(alarm.id),
+        ),
+      ],
+    ).ignore();
   }
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final alarms = widget.controller.alarms;
-    final editing = _editing;
-    return Stack(
-      children: [
-        if (alarms.isEmpty)
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const ClockSymbol(
-                  'alarm',
-                  size: 44,
-                  color: ClockColors.emptySymbol,
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  l.noAlarms,
-                  style: clockText(
-                    22,
-                    weight: FontWeight.w600,
-                    color: ClockColors.emptyText,
-                  ),
-                ),
-              ],
-            ),
-          )
-        else
-          LayoutBuilder(
-            builder: (context, box) => SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(
-                ClockMetrics.cardsLeft,
-                toolbarHeight + 15,
-                ClockMetrics.cardsLeft,
-                20,
+    final colors = AmalfiTheme.of(context).colors;
+    final alarms = controller.alarms;
+    if (alarms.isEmpty) {
+      // The kit's block (32 pt symbol, 16 pt, Title 2) starts 300 pt below the toolbar.
+      return Align(
+        alignment: Alignment.topCenter,
+        child: Padding(
+          padding: const EdgeInsets.only(top: 300),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClockGlyph('alarm', size: 32, color: colors.textTertiary),
+              const SizedBox(height: 16),
+              Text(
+                l.noAlarms,
+                style: AmalfiType.title2(color: colors.textPrimary),
               ),
-              child: Wrap(
-                spacing: CardGrid.gap,
-                runSpacing: CardGrid.gap,
-                children: [
-                  for (final alarm in alarms)
-                    GestureDetector(
-                      onTap: () => setState(() => _editing = alarm),
-                      onSecondaryTapUp: (d) =>
-                          _openMenu(alarm, d.globalPosition),
-                      child: AlarmCard(
-                        key: ValueKey('alarm ${alarm.id}'),
-                        alarm: alarm,
-                        width: CardGrid.of(box.maxWidth).cardWidth,
-                        onToggle: () => widget.controller.toggleAlarm(alarm),
-                      ),
-                    ),
-                ],
+            ],
+          ),
+        ),
+      );
+    }
+    return LayoutBuilder(
+      builder: (context, box) => SingleChildScrollView(
+        padding: const EdgeInsets.all(ClockMetrics.cardsMargin),
+        child: Wrap(
+          spacing: CardGrid.gap,
+          runSpacing: CardGrid.gap,
+          children: [
+            for (final alarm in alarms)
+              GestureDetector(
+                onTap: () => onEdit(alarm),
+                onSecondaryTapUp: (d) =>
+                    _openMenu(context, alarm, d.globalPosition),
+                child: AlarmCard(
+                  key: ValueKey('alarm ${alarm.id}'),
+                  alarm: alarm,
+                  width: CardGrid.of(box.maxWidth).cardWidth,
+                  onToggle: () => controller.toggleAlarm(alarm),
+                ),
               ),
-            ),
-          ),
-        if (editing != null)
-          Positioned.fill(
-            child: AlarmEditor(
-              key: ValueKey('editor ${editing.id}'),
-              alarm: editing,
-              isNew: !alarms.any((a) => a.id == editing.id),
-              onCancel: () => setState(() => _editing = null),
-              onSave: (a) {
-                widget.controller.saveAlarm(a);
-                setState(() => _editing = null);
-              },
-              onDelete: () {
-                widget.controller.deleteAlarm(editing.id);
-                setState(() => _editing = null);
-              },
-            ),
-          ),
-      ],
+          ],
+        ),
+      ),
     );
   }
 }
 
-/// An alarm card (CL-09): the time, the label, the repeat and the sound one under the other,
-/// the switch below them; an alarm that is off turns all its texts gray.
+/// An alarm card (kit `Alarm Card On|Off`): the time, the label, the repeat and the sound one
+/// under the other, the switch at the bottom right; an alarm that is off turns all its texts
+/// tertiary.
 class AlarmCard extends StatelessWidget {
   const AlarmCard({
     super.key,
     required this.alarm,
     required this.onToggle,
-    this.width = 186,
+    this.width = 184,
   });
   final double width;
   final Alarm alarm;
@@ -186,73 +125,83 @@ class AlarmCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final colors = AmalfiTheme.of(context).colors;
     final on = alarm.enabled;
-    final ink = on ? ClockColors.text : ClockColors.alarmMinor;
-    const minor = ClockColors.alarmMinor;
-    Widget line(double top, String text, TextStyle style) => Positioned(
-      left: 24,
-      right: 12,
-      top: top,
-      child: Text(
-        text,
-        maxLines: 1,
-        softWrap: false,
-        overflow: TextOverflow.ellipsis,
-        style: style,
-      ),
-    );
-    return Container(
+    Widget line(double top, double height, String text, TextStyle style) =>
+        Positioned(
+          left: 16,
+          right: 16,
+          top: top,
+          height: height,
+          child: Text(
+            text,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.ellipsis,
+            style: style,
+          ),
+        );
+    return SizedBox(
       width: width,
-      height: ClockMetrics.alarmCard.height,
-      decoration: BoxDecoration(
-        color: ClockColors.card,
-        borderRadius: BorderRadius.circular(ClockMetrics.cardRadius),
-      ),
-      child: Stack(
-        children: [
-          // Proportional figures: the time of a card does not change while it is shown.
-          line(
-            33,
-            formatTime(context, alarm.hour, alarm.minute),
-            thinDigits(
+      height: ClockMetrics.alarmCardHeight,
+      child: DecoratedBox(
+        decoration: AmalfiShapeDecoration(
+          color: clockPalette.card,
+          shape: AmalfiSmoothBorder(radius: ClockMetrics.cardRadius),
+        ),
+        child: Stack(
+          children: [
+            line(
+              16,
               40,
-              color: ink,
-              weight: 300,
-            ).copyWith(fontFeatures: const []),
-          ),
-          line(
-            72,
-            alarm.label.isEmpty ? l.alarmDefaultLabel : alarm.label,
-            clockText(13, weight: FontWeight.w500, color: ink),
-          ),
-          line(
-            90,
-            l.repeatSummary(repeatText(l, alarm.repeat)),
-            clockText(12, color: minor),
-          ),
-          line(
-            107,
-            l.soundSummary(l.defaultSound),
-            clockText(12, color: minor),
-          ),
-          Positioned(
-            left: 31,
-            top: 130,
-            child: ClockSwitch(
-              key: ValueKey('switch ${alarm.id}'),
-              value: on,
-              onChanged: (_) => onToggle(),
+              formatTime(context, alarm.hour, alarm.minute),
+              numeral(40, color: on ? colors.textPrimary : colors.textTertiary),
             ),
-          ),
-        ],
+            line(
+              72,
+              18,
+              alarm.label.isEmpty ? l.alarmDefaultLabel : alarm.label,
+              AmalfiType.body(
+                color: on ? colors.textPrimary : colors.textTertiary,
+              ),
+            ),
+            line(
+              96,
+              16,
+              repeatText(l, alarm.repeat),
+              AmalfiType.callout(
+                color: on ? colors.textSecondary : colors.textTertiary,
+              ),
+            ),
+            line(
+              116,
+              16,
+              l.defaultSound,
+              AmalfiType.callout(color: colors.textTertiary),
+            ),
+            Positioned(
+              left: width - 16 - ClockSwitch.size.width,
+              top: 136,
+              child: ClockSwitch(
+                key: ValueKey('switch ${alarm.id}'),
+                value: on,
+                semanticLabel: alarm.label.isEmpty
+                    ? l.alarmDefaultLabel
+                    : alarm.label,
+                onChanged: (_) => onToggle(),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-/// The editor sheet (514 × 391, `#272727`): the time with hour and minute parts (the focused
-/// part filled orange, arrows and digits change it), seven round day toggles, the label, the
-/// sound, snooze and its length, Cancel and Save.
+/// The editor sheet (kit `Alarm Editor`, 512 × 392): the time with hour and minute fields (the
+/// focused one filled with the accent, arrows and digits change it), seven round day toggles,
+/// the label, the sound, snooze and its length, Cancel and Save. Every control sits at the
+/// kit's frame.
 class AlarmEditor extends StatefulWidget {
   const AlarmEditor({
     super.key,
@@ -268,6 +217,8 @@ class AlarmEditor extends StatefulWidget {
   final VoidCallback onCancel;
   final ValueChanged<Alarm> onSave;
   final VoidCallback onDelete;
+
+  static const Size size = Size(512, 392);
 
   @override
   State<AlarmEditor> createState() => _AlarmEditorState();
@@ -301,178 +252,222 @@ class _AlarmEditorState extends State<AlarmEditor> {
     ),
   );
 
-  Widget _row(String title, Widget child) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 7),
-    child: Row(
-      children: [
-        SizedBox(
-          width: 150,
-          child: Text(
-            title,
-            textAlign: TextAlign.right,
-            style: clockText(13, color: ClockColors.secondary),
-          ),
-        ),
-        const SizedBox(width: 12),
-        child,
-      ],
-    ),
-  );
-
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final colors = AmalfiTheme.of(context).colors;
     final letters = l.weekdayLetters.characters.toList();
+    Widget caption(double top, String text) => Positioned(
+      left: 24,
+      top: top,
+      width: 96,
+      height: 16,
+      child: Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: AmalfiType.callout(color: colors.textSecondary),
+      ),
+    );
     return Sheet(
-      size: const Size(514, 391),
+      size: AlarmEditor.size,
       onDismiss: widget.onCancel,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
+      child: Stack(
+        children: [
+          Positioned(
+            left: 24,
+            top: 20,
+            right: 24,
+            height: 22,
+            child: Text(
               widget.isNew ? l.newAlarm : l.editAlarm,
-              textAlign: TextAlign.center,
-              style: clockText(13, weight: FontWeight.w600),
+              style: AmalfiType.title3(color: colors.textPrimary),
             ),
-            const SizedBox(height: 12),
-            Center(
-              child: TimeField(
-                hour: _hour,
-                minute: _minute,
-                onChanged: (h, m) => setState(() {
-                  _hour = h;
-                  _minute = m;
-                }),
-              ),
+          ),
+          Positioned(
+            left: 168,
+            top: 64,
+            child: TimeField(
+              hour: _hour,
+              minute: _minute,
+              onChanged: (h, m) => setState(() {
+                _hour = h;
+                _minute = m;
+              }),
             ),
-            const SizedBox(height: 14),
-            _row(
-              l.repeat,
-              Row(
-                children: [
-                  for (var d = 1; d <= 7; d++)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: GestureDetector(
-                        key: ValueKey('day $d'),
-                        onTap: () => setState(
-                          () => _repeat.contains(d)
-                              ? _repeat.remove(d)
-                              : _repeat.add(d),
-                        ),
-                        child: Container(
-                          width: 32,
-                          height: 32,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _repeat.contains(d)
-                                ? ClockColors.orange
-                                : ClockColors.button,
-                          ),
-                          child: Text(
-                            d - 1 < letters.length ? letters[d - 1] : '',
-                            style: clockText(13, weight: FontWeight.w600),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            _row(
-              l.label,
-              ClockTextField(
-                key: const ValueKey('alarm label'),
-                controller: _label,
-                placeholder: l.alarmDefaultLabel,
-                onSubmitted: (_) => _save(),
-              ),
-            ),
-            _row(
-              l.sound,
-              Container(
-                width: 224,
-                height: 24,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                alignment: Alignment.centerLeft,
-                decoration: BoxDecoration(
-                  color: ClockColors.button,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(l.defaultSound, style: clockText(13)),
-              ),
-            ),
-            _row(
-              l.snooze,
-              GestureDetector(
-                key: const ValueKey('snooze'),
-                onTap: () => setState(() => _snooze = !_snooze),
-                child: Container(
-                  width: 16,
-                  height: 16,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: _snooze ? ClockColors.orange : ClockColors.button,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: _snooze
-                      ? Text('✓', style: clockText(11, weight: FontWeight.w600))
-                      : null,
+          ),
+          caption(152, l.repeat),
+          for (var d = 1; d <= 7; d++)
+            Positioned(
+              left: 132 + (d - 1) * 40.0,
+              top: 144,
+              child: _DayToggle(
+                key: ValueKey('day $d'),
+                letter: d - 1 < letters.length ? letters[d - 1] : '',
+                on: _repeat.contains(d),
+                onTap: () => setState(
+                  () =>
+                      _repeat.contains(d) ? _repeat.remove(d) : _repeat.add(d),
                 ),
               ),
             ),
-            _row(
-              l.snoozeLength,
-              SnoozeLengthButton(
-                minutes: _snoozeMinutes,
-                enabled: _snooze,
-                onChanged: (m) => setState(() => _snoozeMinutes = m),
-              ),
+          caption(196, l.label),
+          Positioned(
+            left: 132,
+            top: 192,
+            child: AmalfiTextField(
+              key: const ValueKey('alarm label'),
+              controller: _label,
+              placeholder: l.alarmDefaultLabel,
+              width: 224,
+              onSubmitted: (_) => _save(),
             ),
-            const Spacer(),
-            Row(
-              children: [
-                if (!widget.isNew)
-                  CapsuleButton(
-                    key: const ValueKey('delete alarm'),
-                    label: l.delete,
-                    color: ClockColors.button,
-                    width: 71,
-                    height: 26,
-                    onPressed: widget.onDelete,
-                  ),
-                const Spacer(),
-                CapsuleButton(
-                  key: const ValueKey('cancel'),
-                  label: l.cancel,
-                  color: ClockColors.button,
-                  width: 71,
-                  height: 26,
-                  onPressed: widget.onCancel,
-                ),
-                const SizedBox(width: 10),
-                CapsuleButton(
-                  key: const ValueKey('save'),
-                  label: l.save,
-                  color: ClockColors.orange,
-                  width: 71,
-                  height: 26,
-                  onPressed: _save,
-                ),
+          ),
+          caption(236, l.sound),
+          Positioned(
+            left: 132,
+            top: 232,
+            child: AmalfiPopUpButton<int>(
+              key: const ValueKey('alarm sound'),
+              // The only sound the app has (the freedesktop alarm sound): listed, so the
+              // control does what it says; more sounds are tracked in silica-os/clock.
+              items: [AmalfiPopUpItem(value: 0, label: l.defaultSound)],
+              value: 0,
+              onChanged: (_) {},
+              width: 224,
+              semanticLabel: l.sound,
+            ),
+          ),
+          Positioned(
+            left: 132,
+            top: 272,
+            child: AmalfiCheckbox(
+              key: const ValueKey('snooze'),
+              value: _snooze,
+              label: l.snooze,
+              onChanged: (v) => setState(() => _snooze = v),
+            ),
+          ),
+          caption(308, l.snoozeLength),
+          Positioned(
+            left: 132,
+            top: 304,
+            child: AmalfiPopUpButton<int>(
+              key: const ValueKey('snooze length'),
+              items: [
+                for (var m = 1; m <= 15; m++)
+                  AmalfiPopUpItem(value: m, label: l.minutes(m)),
               ],
+              value: _snoozeMinutes,
+              onChanged: _snooze
+                  ? (m) => setState(() => _snoozeMinutes = m)
+                  : null,
+              width: 108,
+              semanticLabel: l.snoozeLength,
             ),
-          ],
+          ),
+          if (!widget.isNew)
+            Positioned(
+              left: 24,
+              top: 348,
+              child: AmalfiPushButton(
+                key: const ValueKey('delete alarm'),
+                label: l.delete,
+                variant: AmalfiPushButtonVariant.destructive,
+                onPressed: widget.onDelete,
+              ),
+            ),
+          Positioned(
+            left: 352,
+            top: 348,
+            child: ClockButton(
+              key: const ValueKey('cancel'),
+              label: l.cancel,
+              width: ClockMetrics.buttonWide,
+              onPressed: widget.onCancel,
+            ),
+          ),
+          Positioned(
+            left: 432,
+            top: 348,
+            child: ClockButton(
+              key: const ValueKey('save'),
+              label: l.save,
+              fill: clockPalette.accent,
+              onPressed: _save,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A round day toggle (kit `Day 1…7`): 32 pt, the accent with an `On Accent` letter when on,
+/// `Surface/Sunken` with a secondary letter when off.
+class _DayToggle extends StatelessWidget {
+  const _DayToggle({
+    super.key,
+    required this.letter,
+    required this.on,
+    required this.onTap,
+  });
+  final String letter;
+  final bool on;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AmalfiTheme.of(context).colors;
+    return AmalfiInteraction(
+      onActivate: onTap,
+      builder: (context, state) => Semantics(
+        button: true,
+        selected: on,
+        label: letter,
+        child: SizedBox.square(
+          dimension: 32,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: AmalfiShapeDecoration(
+                    color: on ? clockPalette.accent : colors.surfaceSunken,
+                    shape: AmalfiSmoothBorder(radius: 16),
+                  ),
+                ),
+              ),
+              if (state.hovered && !state.pressed)
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: ShapeDecoration(
+                      color: colors.stateHoverOverlay,
+                      shape: AmalfiSmoothBorder(radius: 16),
+                    ),
+                  ),
+                ),
+              Center(
+                child: Text(
+                  letter,
+                  style: AmalfiType.label(
+                    color: on ? colors.textOnAccent : colors.textSecondary,
+                  ),
+                ),
+              ),
+              if (state.focused)
+                Positioned.fill(child: AmalfiFocusHalo(radius: 16)),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// A time field with an hour and a minute part: click a part to focus it (orange), then type
-/// digits or use the arrow keys; Tab moves to the other part.
+/// A time field with an hour and a minute part (kit `Hour field`, `Minute field`: 80 × 64,
+/// radius 12, Display digits): click a part to focus it (accent fill), then type digits or
+/// use the arrow keys; Tab moves to the other part.
 class TimeField extends StatefulWidget {
   const TimeField({
     super.key,
@@ -498,6 +493,11 @@ class _TimeFieldState extends State<TimeField> {
   void initState() {
     super.initState();
     _focus.addListener(() => setState(() => _typed = ''));
+    // The editor opens with the hour selected (kit `Hour field`), ready for the keyboard; an
+    // `autofocus` would lose against the window's own focus.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focus.requestFocus();
+    });
   }
 
   @override
@@ -550,26 +550,39 @@ class _TimeFieldState extends State<TimeField> {
 
   @override
   Widget build(BuildContext context) {
-    Widget part(int index, int value) => GestureDetector(
-      key: ValueKey(index == 0 ? 'hour part' : 'minute part'),
-      onTap: () {
-        _focus.requestFocus();
-        setState(() {
-          _part = index;
-          _typed = '';
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: _focus.hasFocus && _part == index
-              ? const Color(0xFFC87524)
-              : null,
-          borderRadius: BorderRadius.circular(6),
+    final colors = AmalfiTheme.of(context).colors;
+    Widget part(int index, int value) {
+      final focused = _focus.hasFocus && _part == index;
+      return GestureDetector(
+        key: ValueKey(index == 0 ? 'hour part' : 'minute part'),
+        onTap: () {
+          _focus.requestFocus();
+          setState(() {
+            _part = index;
+            _typed = '';
+          });
+        },
+        child: SizedBox(
+          width: 80,
+          height: 64,
+          child: DecoratedBox(
+            decoration: AmalfiShapeDecoration(
+              color: focused ? clockPalette.accent : colors.surfaceSunken,
+              shape: AmalfiSmoothBorder(radius: 12),
+            ),
+            child: Center(
+              child: Text(
+                value.toString().padLeft(2, '0'),
+                style: AmalfiType.display(
+                  color: focused ? colors.textOnAccent : colors.textPrimary,
+                ).copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+              ),
+            ),
+          ),
         ),
-        child: Text(value.toString().padLeft(2, '0'), style: thinDigits(40)),
-      ),
-    );
+      );
+    }
+
     return Focus(
       focusNode: _focus,
       autofocus: true,
@@ -578,97 +591,17 @@ class _TimeFieldState extends State<TimeField> {
         mainAxisSize: MainAxisSize.min,
         children: [
           part(0, widget.hour),
-          Text(':', style: thinDigits(40)),
-          part(1, widget.minute),
-        ],
-      ),
-    );
-  }
-}
-
-/// The snooze length: a pop-up button with 1 to 15 minutes, the current one checked.
-class SnoozeLengthButton extends StatefulWidget {
-  const SnoozeLengthButton({
-    super.key,
-    required this.minutes,
-    required this.enabled,
-    required this.onChanged,
-  });
-
-  final int minutes;
-  final bool enabled;
-  final ValueChanged<int> onChanged;
-
-  @override
-  State<SnoozeLengthButton> createState() => _SnoozeLengthButtonState();
-}
-
-class _SnoozeLengthButtonState extends State<SnoozeLengthButton> {
-  OverlayEntry? _menu;
-
-  void _open() {
-    final box = context.findRenderObject();
-    final overlay = Overlay.maybeOf(context);
-    if (box is! RenderBox || overlay == null) return;
-    final l = AppLocalizations.of(context);
-    final at = box.localToGlobal(Offset(0, box.size.height + 4));
-    _menu = OverlayEntry(
-      builder: (_) => Positioned.fill(
-        child: MenuHost(
-          anchor: at,
-          opaque: true,
-          entries: [
-            for (var m = 1; m <= 15; m++)
-              MenuAction(
-                l.minutes(m),
-                checked: m == widget.minutes,
-                onSelected: () => widget.onChanged(m),
-              ),
-          ],
-          onDismissed: _close,
-        ),
-      ),
-    );
-    overlay.insert(_menu!);
-  }
-
-  void _close() {
-    _menu?.remove();
-    _menu = null;
-  }
-
-  @override
-  void dispose() {
-    _close();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    final color = widget.enabled ? ClockColors.text : ClockColors.dimmed;
-    return GestureDetector(
-      key: const ValueKey('snooze length'),
-      onTap: widget.enabled ? _open : null,
-      child: Container(
-        width: 120,
-        height: 24,
-        padding: const EdgeInsets.only(left: 8, right: 6),
-        decoration: BoxDecoration(
-          color: ClockColors.button,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Row(
-          children: [
-            Expanded(
+          SizedBox(
+            width: 20,
+            child: Center(
               child: Text(
-                l.minutes(widget.minutes),
-                style: clockText(13, color: color),
+                ':',
+                style: AmalfiType.display(color: colors.textPrimary),
               ),
             ),
-            Text('⌄', style: clockText(12, color: color)),
-          ],
-        ),
+          ),
+          part(1, widget.minute),
+        ],
       ),
     );
   }
