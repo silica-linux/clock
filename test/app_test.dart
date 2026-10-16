@@ -525,8 +525,9 @@ void main() {
       await tester.pump(HandMotion.redraw);
       expect(dial.debugNeedsPaint, isFalse);
       expect(
-        AnalogDialPainter(day: true)
-            .shouldRepaint(AnalogDialPainter(day: true)),
+        AnalogDialPainter(
+          day: true,
+        ).shouldRepaint(AnalogDialPainter(day: true)),
         isFalse,
       );
       await tester.pumpWidget(const SizedBox());
