@@ -180,7 +180,7 @@ class AlarmCard extends StatelessWidget {
             line(
               116,
               16,
-              l.defaultSound,
+              soundName(l, alarm.sound),
               AmalfiType.callout(color: colors.textTertiary),
             ),
             Positioned(
@@ -214,6 +214,7 @@ class AlarmEditor extends StatefulWidget {
     required this.onCancel,
     required this.onSave,
     required this.onDelete,
+    required this.onPreview,
   });
 
   final Alarm alarm;
@@ -221,6 +222,9 @@ class AlarmEditor extends StatefulWidget {
   final VoidCallback onCancel;
   final ValueChanged<Alarm> onSave;
   final VoidCallback onDelete;
+
+  /// Plays a sound once, when the pop-up selects it.
+  final ValueChanged<String> onPreview;
 
   static const Size size = Size(512, 392);
 
@@ -234,6 +238,7 @@ class _AlarmEditorState extends State<AlarmEditor> {
   late final Set<int> _repeat = {...widget.alarm.repeat};
   late bool _snooze = widget.alarm.snooze;
   late int _snoozeMinutes = widget.alarm.snoozeMinutes;
+  late String _sound = widget.alarm.sound;
   late final TextEditingController _label = TextEditingController(
     text: widget.alarm.label,
   );
@@ -252,6 +257,7 @@ class _AlarmEditorState extends State<AlarmEditor> {
       label: _label.text.trim(),
       snooze: _snooze,
       snoozeMinutes: _snoozeMinutes,
+      sound: _sound,
       enabled: true,
     ),
   );
@@ -331,15 +337,12 @@ class _AlarmEditorState extends State<AlarmEditor> {
           Positioned(
             left: 132,
             top: 232,
-            child: AmalfiPopUpButton<int>(
+            child: SoundPopUp(
               key: const ValueKey('alarm sound'),
-              // The only sound the app has (the freedesktop alarm sound): listed, so the
-              // control does what it says; more sounds are tracked in silica-os/clock.
-              items: [AmalfiPopUpItem(value: 0, label: l.defaultSound)],
-              value: 0,
-              onChanged: (_) {},
+              value: _sound,
+              onChanged: (id) => setState(() => _sound = id),
+              onPreview: widget.onPreview,
               width: 224,
-              semanticLabel: l.sound,
             ),
           ),
           Positioned(

@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import '../l10n/gen/app_localizations.dart';
 import 'model/alarms.dart';
 import 'model/settings.dart';
+import 'model/sounds.dart';
 import 'model/stopwatch.dart';
 import 'model/timers.dart';
 import 'system/notifier.dart';
@@ -186,20 +187,37 @@ class ClockController extends ChangeNotifier {
   RunningTimer? get currentTimer =>
       timers.isEmpty ? null : timers[selectedTimer.clamp(0, timers.length - 1)];
 
-  void startTimer(Duration duration, {String label = ''}) {
+  void startTimer(
+    Duration duration, {
+    String label = '',
+    String sound = defaultSoundId,
+  }) {
     if (duration <= Duration.zero) return;
     final timer = CountdownTimer(
       duration: duration,
       label: label,
+      sound: validSound(sound),
       clock: _micros,
     )..start();
     timers.insert(0, RunningTimer(timer));
     selectedTimer = 0;
     settings
-      ..recents = addRecent(settings.recents, RecentTimer(duration, label))
+      ..recents = addRecent(
+        settings.recents,
+        RecentTimer(duration, label, validSound(sound)),
+      )
       ..save();
     notifyListeners();
   }
+
+  /// Changes the sound a running timer rings with.
+  void setTimerSound(RunningTimer t, String sound) {
+    t.timer.sound = validSound(sound);
+    notifyListeners();
+  }
+
+  /// Plays [sound] once: the Sound pop-ups preview what they select.
+  void previewSound(String sound) => ringer.preview(sound);
 
   void pauseResume(RunningTimer t) {
     t.timer.running ? t.timer.pause() : t.timer.start();
@@ -301,6 +319,7 @@ class ClockController extends ChangeNotifier {
       ],
       notifyAfter: alarmNotifyDelay,
       soundAfter: alarmSoundDelay,
+      sound: alarm.sound,
       onAction: (action) {
         if (action != 'snooze') return;
         final current = alarms.where((a) => a.id == alarm.id).firstOrNull;
@@ -326,9 +345,10 @@ class ClockController extends ChangeNotifier {
       ],
       notifyAfter: timerNotifyDelay,
       soundAfter: timerSoundDelay,
+      sound: timer.sound,
       onAction: (action) {
         if (action == 'repeat') {
-          startTimer(timer.duration, label: timer.label);
+          startTimer(timer.duration, label: timer.label, sound: timer.sound);
         }
       },
     );
@@ -348,10 +368,11 @@ class ClockController extends ChangeNotifier {
     required List<String> actions,
     required Duration notifyAfter,
     required Duration soundAfter,
+    required String sound,
     required void Function(String action) onAction,
   }) {
     _later(soundAfter, () {
-      ringer.start();
+      ringer.start(sound: sound);
       notifyListeners();
     });
     _later(notifyAfter, () {

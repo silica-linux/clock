@@ -1,6 +1,7 @@
 import 'package:silica_clock/src/model/alarms.dart';
 import 'package:silica_clock/src/model/settings.dart';
 import 'package:silica_clock/src/model/stopwatch.dart';
+import 'package:silica_clock/src/model/sounds.dart';
 import 'package:silica_clock/src/model/timers.dart';
 import 'dart:io';
 
@@ -126,6 +127,34 @@ void main() {
       {3},
     );
   });
+
+  test(
+    'sounds: stored with alarms and recent timers, unknown ones fall back',
+    () {
+      const a = Alarm(id: 1, hour: 6, minute: 0, sound: 'bell');
+      expect(Alarm.fromJson(a.toJson())!.sound, 'bell');
+      expect(
+        Alarm.fromJson({
+          'id': 1,
+          'hour': 1,
+          'minute': 2,
+          'sound': 'nope',
+        })!.sound,
+        defaultSoundId,
+      );
+      // A file written before sounds existed has none.
+      expect(
+        Alarm.fromJson({'id': 1, 'hour': 1, 'minute': 2})!.sound,
+        defaultSoundId,
+      );
+      const r = RecentTimer(Duration(minutes: 3), 'Eggs', 'complete');
+      expect(RecentTimer.fromJson(r.toJson()), r);
+      expect(
+        RecentTimer.fromJson({'seconds': 60, 'label': ''})!.sound,
+        defaultSoundId,
+      );
+    },
+  );
 
   test('settings: save and load, a broken file starts empty', () {
     final dir = Directory.systemTemp.createTempSync('clock-settings');

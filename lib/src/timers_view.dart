@@ -15,6 +15,7 @@ import 'package:silica_ui/silica_ui.dart';
 
 import '../l10n/gen/app_localizations.dart';
 import 'controller.dart';
+import 'model/sounds.dart';
 import 'model/timers.dart';
 import 'style.dart';
 import 'widgets.dart';
@@ -41,6 +42,7 @@ class _TimersViewState extends State<TimersView>
   Duration _picked = const Duration(minutes: 15);
   final TextEditingController _label = TextEditingController();
   bool _picking = false;
+  String _sound = defaultSoundId;
 
   @override
   void initState() {
@@ -75,7 +77,11 @@ class _TimersViewState extends State<TimersView>
   }
 
   void _start() {
-    widget.controller.startTimer(_picked, label: _label.text.trim());
+    widget.controller.startTimer(
+      _picked,
+      label: _label.text.trim(),
+      sound: _sound,
+    );
     setState(() => _picking = false);
   }
 
@@ -95,6 +101,9 @@ class _TimersViewState extends State<TimersView>
               ? _Picker(
                   duration: _picked,
                   label: _label,
+                  sound: _sound,
+                  onSound: (id) => setState(() => _sound = id),
+                  onPreview: c.previewSound,
                   onChanged: (d) => setState(() => _picked = d),
                   onStart: _start,
                   onCancel: current == null
@@ -139,6 +148,9 @@ class _Picker extends StatefulWidget {
   const _Picker({
     required this.duration,
     required this.label,
+    required this.sound,
+    required this.onSound,
+    required this.onPreview,
     required this.onChanged,
     required this.onStart,
     this.onCancel,
@@ -146,6 +158,9 @@ class _Picker extends StatefulWidget {
 
   final Duration duration;
   final TextEditingController label;
+  final String sound;
+  final ValueChanged<String> onSound;
+  final ValueChanged<String> onPreview;
   final ValueChanged<Duration> onChanged;
   final VoidCallback onStart;
   final VoidCallback? onCancel;
@@ -313,15 +328,12 @@ class _PickerState extends State<_Picker> {
                 ),
                 Positioned(
                   top: _soundTop,
-                  child: AmalfiPopUpButton<int>(
+                  child: SoundPopUp(
                     key: const ValueKey('timer sound'),
-                    // The only sound the app has: listed, so the control does what it
-                    // says (more sounds: silica-os/clock issue).
-                    items: [AmalfiPopUpItem(value: 0, label: l.defaultSound)],
-                    value: 0,
-                    onChanged: (_) {},
+                    value: widget.sound,
+                    onChanged: widget.onSound,
+                    onPreview: widget.onPreview,
                     width: 200,
-                    semanticLabel: l.sound,
                   ),
                 ),
                 Positioned(
@@ -441,13 +453,12 @@ class _Running extends StatelessWidget {
               Positioned(
                 left: (ring - 200) / 2,
                 top: 392,
-                child: AmalfiPopUpButton<int>(
+                child: SoundPopUp(
                   key: const ValueKey('timer running sound'),
-                  items: [AmalfiPopUpItem(value: 0, label: l.defaultSound)],
-                  value: 0,
-                  onChanged: (_) {},
+                  value: t.sound,
+                  onChanged: (id) => controller.setTimerSound(timer, id),
+                  onPreview: controller.previewSound,
                   width: 200,
-                  semanticLabel: l.sound,
                 ),
               ),
               Positioned(
@@ -678,8 +689,11 @@ class _TimerList extends StatelessWidget {
                           symbol: 'play',
                           semanticLabel: l.start,
                           fill: clockPalette.start,
-                          onPressed: () =>
-                              c.startTimer(r.duration, label: r.label),
+                          onPressed: () => c.startTimer(
+                            r.duration,
+                            label: r.label,
+                            sound: r.sound,
+                          ),
                         ),
                       ),
                     ],

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:silica_ui/silica_ui.dart';
+import 'package:silica_clock/src/model/sounds.dart';
 import 'package:silica_clock/src/app.dart';
 import 'package:silica_clock/src/controller.dart';
 import 'package:silica_clock/src/model/alarms.dart';
@@ -38,11 +39,19 @@ class FakeRinger extends Ringer {
   @override
   bool get ringing => _on;
   @override
-  void start({Duration limit = const Duration(minutes: 5)}) {
+  void start({
+    Duration limit = const Duration(minutes: 5),
+    String sound = defaultSoundId,
+  }) {
+    rang.add(sound);
     rings++;
     _on = true;
   }
 
+  final List<String> previews = [];
+  final List<String> rang = [];
+  @override
+  void preview(String sound) => previews.add(sound);
   @override
   void stop() => _on = false;
 }
@@ -323,6 +332,43 @@ void main() {
       await done(tester, c);
     },
   );
+
+  testWidgets('the Sound pop-ups choose, preview and keep the sound', (
+    tester,
+  ) async {
+    final ringer = FakeRinger();
+    final c = await pump(tester, ringer: ringer);
+    c.select(Section.alarms);
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('add')));
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('alarm sound')));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Bell').last);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(ringer.previews, ['bell']);
+    await tester.tap(find.byKey(const ValueKey('save')));
+    await tester.pump();
+    expect(c.alarms.single.sound, 'bell');
+    expect(find.text('Bell'), findsOneWidget);
+    c.select(Section.timers);
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('timer sound')));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Complete').last);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(ringer.previews, ['bell', 'complete']);
+    await tester.tap(find.byKey(const ValueKey('timer start')));
+    await tester.pump();
+    expect(c.currentTimer!.timer.sound, 'complete');
+    expect(c.settings.recents.first.sound, 'complete');
+    await tester.tap(find.byKey(const ValueKey('timer running sound')));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Ring').last);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(c.currentTimer!.timer.sound, 'phone-incoming-call');
+    await done(tester, c);
+  });
 
   testWidgets('an alarm rings on time: switch, banner after 227 ms, sound '
       'after 389 ms; Snooze rings again after the snooze length', (

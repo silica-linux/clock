@@ -6,6 +6,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:silica_ui/silica_ui.dart';
 
+import '../l10n/gen/app_localizations.dart';
+import 'model/sounds.dart';
 import 'style.dart';
 
 /// The pressed fill of a capsule (CL-02): green, red and gray as measured; other colours
@@ -400,6 +402,51 @@ class Sheet extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// The name of the sound [id] ([soundIds]) in the language of the app.
+String soundName(AppLocalizations l, String id) => switch (id) {
+  'bell' => l.soundBell,
+  'complete' => l.soundComplete,
+  'message-new-instant' => l.soundMessage,
+  'phone-incoming-call' => l.soundRing,
+  'window-attention' => l.soundAttention,
+  _ => l.defaultSound,
+};
+
+/// The Sound pop-up of the alarm editor and of the timers: every sound, and selecting one
+/// previews it.
+class SoundPopUp extends StatelessWidget {
+  const SoundPopUp({
+    super.key,
+    required this.value,
+    required this.onChanged,
+    required this.onPreview,
+    required this.width,
+  });
+
+  final String value;
+  final ValueChanged<String> onChanged;
+  final ValueChanged<String> onPreview;
+  final double width;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return AmalfiPopUpButton<String>(
+      items: [
+        for (final id in soundIds)
+          AmalfiPopUpItem(value: id, label: soundName(l, id)),
+      ],
+      value: validSound(value),
+      onChanged: (id) {
+        onChanged(id);
+        onPreview(id);
+      },
+      width: width,
+      semanticLabel: l.sound,
     );
   }
 }

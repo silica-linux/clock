@@ -278,6 +278,36 @@ abstract class AppLocalizations {
   /// **'Default'**
   String get defaultSound;
 
+  /// Names of the alarm and timer sounds (the sound theme alerts)
+  ///
+  /// In en, this message translates to:
+  /// **'Bell'**
+  String get soundBell;
+
+  /// No description provided for @soundComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete'**
+  String get soundComplete;
+
+  /// No description provided for @soundMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get soundMessage;
+
+  /// No description provided for @soundRing.
+  ///
+  /// In en, this message translates to:
+  /// **'Ring'**
+  String get soundRing;
+
+  /// No description provided for @soundAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'Attention'**
+  String get soundAttention;
+
   /// Repeat summaries
   ///
   /// In en, this message translates to:

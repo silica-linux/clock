@@ -217,6 +217,7 @@ class _ClockWindowState extends State<ClockWindow> {
                   alarm: editing,
                   isNew: !c.alarms.any((a) => a.id == editing.id),
                   onCancel: () => setState(() => _editing = null),
+                  onPreview: c.previewSound,
                   onSave: (a) {
                     c.saveAlarm(a);
                     setState(() => _editing = null);

@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -113,6 +114,21 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get defaultSound => 'Predefinito';
+
+  @override
+  String get soundBell => 'Campana';
+
+  @override
+  String get soundComplete => 'Completato';
+
+  @override
+  String get soundMessage => 'Messaggio';
+
+  @override
+  String get soundRing => 'Suoneria';
+
+  @override
+  String get soundAttention => 'Attenzione';
 
   @override
   String get repeatNever => 'Mai';

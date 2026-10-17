@@ -1,5 +1,6 @@
 // Timers: a countdown that can pause and resume, the recent timers and the presets.
 
+import 'sounds.dart';
 import 'stopwatch.dart' show MicrosClock, monotonicMicros;
 
 /// The presets of the "+" menu (minutes), CL-01.
@@ -19,11 +20,18 @@ const List<int> timerPresetMinutes = [
 ];
 
 class CountdownTimer {
-  CountdownTimer({required this.duration, this.label = '', MicrosClock? clock})
-    : _clock = clock ?? monotonicMicros;
+  CountdownTimer({
+    required this.duration,
+    this.label = '',
+    this.sound = defaultSoundId,
+    MicrosClock? clock,
+  }) : _clock = clock ?? monotonicMicros;
 
   final Duration duration;
   final String label;
+
+  /// The theme name of the ringing sound ([soundIds]); the running timer's pop-up changes it.
+  String sound;
   final MicrosClock _clock;
   int _spent = 0;
   int? _since;
@@ -68,13 +76,15 @@ class CountdownTimer {
 
 /// A timer the user ran before: its duration and label, newest first in the list.
 class RecentTimer {
-  const RecentTimer(this.duration, this.label);
+  const RecentTimer(this.duration, this.label, [this.sound = defaultSoundId]);
   final Duration duration;
   final String label;
+  final String sound;
 
   Map<String, Object?> toJson() => {
     'seconds': duration.inSeconds,
     'label': label,
+    'sound': sound,
   };
 
   static RecentTimer? fromJson(Object? json) {
@@ -85,6 +95,7 @@ class RecentTimer {
     return RecentTimer(
       Duration(seconds: seconds),
       label is String ? label : '',
+      validSound(json['sound']),
     );
   }
 
@@ -92,10 +103,11 @@ class RecentTimer {
   bool operator ==(Object other) =>
       other is RecentTimer &&
       other.duration == duration &&
-      other.label == label;
+      other.label == label &&
+      other.sound == sound;
 
   @override
-  int get hashCode => Object.hash(duration, label);
+  int get hashCode => Object.hash(duration, label, sound);
 }
 
 /// Adds `timer` at the top of `recents`, without duplicates, at most `limit` entries.

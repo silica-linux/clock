@@ -8,6 +8,8 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 
+import '../model/sounds.dart';
+
 const MethodChannel _dbus = MethodChannel('silica/dbus', JSONMethodCodec());
 
 const String _destination = 'org.freedesktop.Notifications';
@@ -131,17 +133,20 @@ class Ringer {
 
   bool get ringing => _timer != null;
 
-  void start({Duration limit = const Duration(minutes: 5)}) {
+  void start({
+    Duration limit = const Duration(minutes: 5),
+    String sound = defaultSoundId,
+  }) {
     if (_timer != null) return;
     _rings = 0;
     final max = limit.inMilliseconds ~/ interval.inMilliseconds;
-    _play();
+    _play(sound);
     _timer = Timer.periodic(interval, (_) {
       if (++_rings >= max) {
         stop();
         return;
       }
-      _play();
+      _play(sound);
     });
   }
 
@@ -150,18 +155,19 @@ class Ringer {
     _timer = null;
   }
 
-  static void _play() {
+  /// Plays [sound] once (the Sound pop-ups preview what they select).
+  void preview(String sound) => _play(validSound(sound));
+
+  static void _play(String sound) {
     // canberra plays the theme sound by name; paplay plays the file of the freedesktop theme.
-    Process.run('canberra-gtk-play', ['-i', 'alarm-clock-elapsed']).then((
-      result,
-    ) {
+    Process.run('canberra-gtk-play', ['-i', sound]).then((result) {
       if (result.exitCode == 0) return;
-      _fallback();
-    }, onError: (_) => _fallback());
+      _fallback(sound);
+    }, onError: (_) => _fallback(sound));
   }
 
-  static void _fallback() {
-    const file = '/usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga';
+  static void _fallback(String sound) {
+    final file = '/usr/share/sounds/freedesktop/stereo/$sound.oga';
     if (!File(file).existsSync()) return;
     Process.run('paplay', [file]).then((_) {}, onError: (_) {});
   }

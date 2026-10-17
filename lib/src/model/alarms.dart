@@ -1,6 +1,8 @@
 // Alarms: a time of day, the weekdays it repeats on, a label, snooze, on or off. Times are
 // local wall-clock times in the system zone.
 
+import 'sounds.dart';
+
 /// An alarm.
 class Alarm {
   const Alarm({
@@ -12,6 +14,7 @@ class Alarm {
     this.snooze = true,
     this.snoozeMinutes = 9,
     this.enabled = true,
+    this.sound = defaultSoundId,
   });
 
   final int id;
@@ -25,6 +28,9 @@ class Alarm {
   final int snoozeMinutes;
   final bool enabled;
 
+  /// The theme name of the ringing sound ([soundIds]).
+  final String sound;
+
   Alarm copyWith({
     int? hour,
     int? minute,
@@ -33,6 +39,7 @@ class Alarm {
     bool? snooze,
     int? snoozeMinutes,
     bool? enabled,
+    String? sound,
   }) => Alarm(
     id: id,
     hour: hour ?? this.hour,
@@ -42,6 +49,7 @@ class Alarm {
     snooze: snooze ?? this.snooze,
     snoozeMinutes: snoozeMinutes ?? this.snoozeMinutes,
     enabled: enabled ?? this.enabled,
+    sound: sound ?? this.sound,
   );
 
   /// The next time it fires strictly after `now` (local wall time), or null when off.
@@ -64,6 +72,7 @@ class Alarm {
     'snooze': snooze,
     'snoozeMinutes': snoozeMinutes,
     'enabled': enabled,
+    'sound': sound,
   };
 
   /// From the settings file; null for anything invalid.
@@ -91,6 +100,7 @@ class Alarm {
           ? snoozeMinutes
           : 9,
       enabled: json['enabled'] != false,
+      sound: validSound(json['sound']),
     );
   }
 
@@ -104,6 +114,7 @@ class Alarm {
       other.snooze == snooze &&
       other.snoozeMinutes == snoozeMinutes &&
       other.enabled == enabled &&
+      other.sound == sound &&
       other.repeat.length == repeat.length &&
       other.repeat.containsAll(repeat);
 

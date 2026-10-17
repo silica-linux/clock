@@ -7,6 +7,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:silica_clock/src/model/sounds.dart';
 import 'package:silica_clock/src/alarms_view.dart';
 import 'package:silica_clock/src/app.dart';
 import 'package:silica_clock/src/controller.dart';
@@ -23,7 +24,12 @@ import 'package:silica_ui/silica_ui.dart';
 
 class _Silent extends Ringer {
   @override
-  void start({Duration limit = const Duration(minutes: 5)}) {}
+  void start({
+    Duration limit = const Duration(minutes: 5),
+    String sound = defaultSoundId,
+  }) {}
+  @override
+  void preview(String sound) {}
   @override
   void stop() {}
 }
