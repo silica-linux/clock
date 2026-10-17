@@ -98,14 +98,15 @@ void main() {
       'select_all',
     ]);
     expect(edit.every((i) => i['enabled'] == false), isTrue);
-    // View: the four sections with ⌘1–4, World checked; the stopwatch styles disabled.
+    // View: the four sections with ⌘1–4, World checked; Digital Stopwatch checked.
     expect(item('View', 'World Clock')['checked'], isTrue);
     expect(item('View', 'Alarms')['shortcut'], {'key': '2', 'meta': true});
     expect(item('View', 'Stopwatch')['shortcut'], {'key': '3', 'meta': true});
     expect(item('View', 'Timers')['shortcut'], {'key': '4', 'meta': true});
     expect(item('View', 'Show Digital Stopwatch')['checked'], isTrue);
-    expect(item('View', 'Show Digital Stopwatch')['enabled'], isFalse);
-    expect(item('View', 'Show Analog Stopwatch')['enabled'], isFalse);
+    expect(item('View', 'Show Digital Stopwatch')['enabled'], isTrue);
+    expect(item('View', 'Show Analog Stopwatch')['enabled'], isTrue);
+    expect(item('View', 'Show Analog Stopwatch')['checked'], isNull);
     await done(tester, c);
   });
 
@@ -117,6 +118,18 @@ void main() {
     expect(c.section, Section.stopwatch);
     expect(item('View', 'Stopwatch')['checked'], isTrue);
     expect(item('View', 'World Clock')['checked'], isNull);
+    await done(tester, c);
+  });
+
+  testWidgets('choosing the analog stopwatch is kept in the settings', (
+    tester,
+  ) async {
+    final c = await pump(tester);
+    await choose(tester, item('View', 'Show Analog Stopwatch')['id']);
+    expect(c.analogStopwatch, isTrue);
+    expect(c.settings.analogStopwatch, isTrue);
+    expect(item('View', 'Show Analog Stopwatch')['checked'], isTrue);
+    expect(item('View', 'Show Digital Stopwatch')['checked'], isNull);
     await done(tester, c);
   });
 

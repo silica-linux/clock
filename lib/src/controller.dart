@@ -100,6 +100,16 @@ class ClockController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// The stopwatch face (View › Show Analog / Digital Stopwatch).
+  bool get analogStopwatch => settings.analogStopwatch;
+  set analogStopwatch(bool v) {
+    if (v == settings.analogStopwatch) return;
+    settings
+      ..analogStopwatch = v
+      ..save();
+    notifyListeners();
+  }
+
   // World clocks.
 
   List<City> get worldCities => [

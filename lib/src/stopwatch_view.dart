@@ -3,6 +3,8 @@
 // 1 pt separators, the current lap on top, fastest green and slowest red) and two capsules 96 pt
 // apart at the bottom: Lap/Reset (`Lap Button`, disabled at rest) and Start/Stop (green / red).
 
+import 'dart:math' as math;
+
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:silica_ui/silica_ui.dart';
@@ -14,12 +16,31 @@ import 'style.dart';
 import 'widgets.dart';
 
 class StopwatchView extends StatefulWidget {
-  const StopwatchView({super.key, required this.controller});
+  const StopwatchView({
+    super.key,
+    required this.controller,
+    this.analog = false,
+  });
   final ClockController controller;
+
+  /// The analog face (kit `Stopwatch Analog`): a dial left of the laps table.
+  final bool analog;
 
   @override
   State<StopwatchView> createState() => _StopwatchViewState();
 }
+
+/// The stopwatch with the analog face.
+class AnalogStopwatchView extends StopwatchView {
+  const AnalogStopwatchView({super.key, required super.controller})
+    : super(analog: true);
+}
+
+const double _dial = 360;
+const double _dialGap = 60;
+
+/// The dial's top in the section (kit: 192 in the window, under the 52 pt toolbar).
+const double _dialTop = 192 - AmalfiToolbarMetrics.toolbarHeight;
 
 class _StopwatchViewState extends State<StopwatchView>
     with SingleTickerProviderStateMixin {
@@ -70,29 +91,53 @@ class _StopwatchViewState extends State<StopwatchView>
     final totals = sw.lapTotals;
     final extremes = sw.extremes;
     String time(Duration d) => formatStopwatch(d, decimal: l.decimalSeparator);
+    final width = MediaQuery.sizeOf(context).width;
+    // The dial and the table are centred together (142 pt from the left at 1024 pt).
+    final groupLeft = math.max(
+      0.0,
+      (width - (_dial + _dialGap + ClockMetrics.lapsWidth)) / 2,
+    );
     return Stack(
       children: [
-        Positioned(
-          left: 0,
-          right: 0,
-          top: ClockMetrics.stopwatchDigitsCenter - 104 / 2,
-          height: 104,
-          child: Center(
-            child: Text(
-              time(sw.elapsed),
-              key: const ValueKey('stopwatch digits'),
-              style: numeral(104, color: colors.textPrimary, tabular: true),
+        if (widget.analog)
+          Positioned(
+            left: groupLeft,
+            top: _dialTop,
+            width: _dial,
+            height: _dial,
+            child: _AnalogDial(
+              key: const ValueKey('analog dial'),
+              stopwatch: sw,
+              time: time(sw.elapsed),
+              ink: colors.textPrimary,
+              secondary: colors.textTertiary,
+              face: ClockDial.face,
+              hole: ClockDial.hole,
+            ),
+          )
+        else
+          Positioned(
+            left: 0,
+            right: 0,
+            top: ClockMetrics.stopwatchDigitsCenter - 104 / 2,
+            height: 104,
+            child: Center(
+              child: Text(
+                time(sw.elapsed),
+                key: const ValueKey('stopwatch digits'),
+                style: numeral(104, color: colors.textPrimary, tabular: true),
+              ),
             ),
           ),
-        ),
         Positioned(
           top: ClockMetrics.lapsTop,
           bottom:
               ClockMetrics.stopwatchButtonsBottom +
               ClockMetrics.buttonHeight +
               24,
-          left: 0,
-          right: 0,
+          left: widget.analog ? groupLeft + _dial + _dialGap : 0,
+          right: widget.analog ? null : 0,
+          width: widget.analog ? ClockMetrics.lapsWidth : null,
           child: Align(
             alignment: Alignment.topCenter,
             child: SizedBox(
@@ -279,4 +324,213 @@ class _LapRow extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The analog face (kit `Stopwatch Analog / Dark`, 360 pt): 60 ticks (every fifth long) and the
+/// numerals 5…60 outside the centre, the digital time below the middle, a 96 pt minutes
+/// sub-dial (30 minutes) at the top, the orange second hand (3 × 196, 27 pt tail), the blue
+/// hand of the current lap (2 × 170) and the orange centre cap.
+class _AnalogDial extends StatelessWidget {
+  const _AnalogDial({
+    super.key,
+    required this.stopwatch,
+    required this.time,
+    required this.ink,
+    required this.secondary,
+    required this.face,
+    required this.hole,
+  });
+
+  final StopwatchModel stopwatch;
+  final String time;
+  final Color ink;
+  final Color secondary;
+  final Color face;
+  final Color hole;
+
+  @override
+  Widget build(BuildContext context) {
+    const c = _dial / 2;
+    Widget numeral(String text, double radius, double angle, TextStyle style) {
+      final a = angle * math.pi / 180;
+      return Positioned(
+        left: c + radius * math.sin(a) - 16,
+        top: c - radius * math.cos(a) - 11,
+        width: 32,
+        height: 22,
+        child: Center(child: Text(text, maxLines: 1, style: style)),
+      );
+    }
+
+    final subTop = 304.0 - 192 - 48; // 64 from the dial's top (kit 256 − 192)
+    final subCentre = Offset(c, subTop + 48);
+    final label = AmalfiType.bodyEmphasis(color: ink).copyWith(height: 1);
+    final subLabel = AmalfiType.label(color: secondary).copyWith(height: 1);
+    return ExcludeSemantics(
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _DialPainter(
+                elapsed: stopwatch.elapsed,
+                lap: stopwatch.currentLap,
+                ink: ink,
+                secondary: secondary,
+                face: face,
+                hole: hole,
+                subCentre: subCentre,
+              ),
+            ),
+          ),
+          for (var i = 1; i <= 12; i++)
+            numeral('${i * 5}', 134, i * 30.0, label),
+          for (final (text, angle) in [
+            ('30', 0.0),
+            ('10', 120.0),
+            ('20', 240.0),
+          ])
+            Positioned(
+              left: subCentre.dx + 26.5 * math.sin(angle * math.pi / 180) - 12,
+              top: subCentre.dy - 26.5 * math.cos(angle * math.pi / 180) - 7,
+              width: 24,
+              height: 14,
+              child: Center(child: Text(text, style: subLabel)),
+            ),
+          Positioned(
+            left: c - 100,
+            top: 416 - 192,
+            width: 200,
+            height: 40,
+            child: Center(
+              child: Text(
+                time,
+                key: const ValueKey('analog time'),
+                maxLines: 1,
+                style: numeral40(ink),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+TextStyle numeral40(Color ink) => AmalfiType.numeral40(
+  color: ink,
+).copyWith(height: 1, fontFeatures: const [FontFeature.tabularFigures()]);
+
+class _DialPainter extends CustomPainter {
+  _DialPainter({
+    required this.elapsed,
+    required this.lap,
+    required this.ink,
+    required this.secondary,
+    required this.face,
+    required this.hole,
+    required this.subCentre,
+  });
+
+  final Duration elapsed;
+  final Duration lap;
+  final Color ink;
+  final Color secondary;
+  final Color face;
+  final Color hole;
+  final Offset subCentre;
+
+  static const Color orange = Color(0xFFFF9230);
+  static const Color blue = Color(0xFF3D95FF);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final centre = size.center(Offset.zero);
+    canvas.drawCircle(centre, 180, Paint()..color = face);
+    canvas.drawCircle(
+      centre,
+      179.5,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..color = const Color(0x1FFFFFFF),
+    );
+    _ticks(canvas, centre, 60, 172, 14, 6.5, 2, 1);
+    // The sub-dial: 30 minutes, a tick per minute, every fifth long.
+    canvas.drawCircle(subCentre, 48, Paint()..color = const Color(0xFF1B1C1F));
+    _ticks(canvas, subCentre, 30, 45, 6, 3, 1.5, 1, longEvery: 5);
+
+    final micros = elapsed.inMicroseconds;
+    final seconds = (micros % 60000000) / 60000000;
+    final minutes = (micros % 1800000000) / 1800000000;
+    final lapSeconds = (lap.inMicroseconds % 60000000) / 60000000;
+    _hand(canvas, subCentre, minutes, 40, 6, 2, orange);
+    _hand(canvas, centre, lapSeconds, 150, 20, 2, blue);
+    _hand(canvas, centre, seconds, 168, 27, 3, orange);
+    canvas.drawCircle(subCentre, 4, Paint()..color = orange);
+    canvas.drawCircle(centre, 8, Paint()..color = orange);
+    canvas.drawCircle(centre, 3, Paint()..color = hole);
+  }
+
+  void _ticks(
+    Canvas canvas,
+    Offset centre,
+    int count,
+    double outer,
+    double longLength,
+    double shortLength,
+    double longWidth,
+    double shortWidth, {
+    int longEvery = 5,
+  }) {
+    final long = Paint()
+      ..color = ink
+      ..strokeWidth = longWidth
+      ..strokeCap = StrokeCap.butt;
+    final short = Paint()
+      ..color = secondary
+      ..strokeWidth = shortWidth
+      ..strokeCap = StrokeCap.butt;
+    for (var i = 0; i < count; i++) {
+      final isLong = i % longEvery == 0;
+      final a = i / count * 2 * math.pi;
+      final dir = Offset(math.sin(a), -math.cos(a));
+      final length = isLong ? longLength : shortLength;
+      canvas.drawLine(
+        centre + dir * outer,
+        centre + dir * (outer - length),
+        isLong ? long : short,
+      );
+    }
+  }
+
+  /// A hand at `turn` (0…1 of a full turn, 0 at the top): `front` ahead of the centre, `tail`
+  /// behind it.
+  void _hand(
+    Canvas canvas,
+    Offset centre,
+    double turn,
+    double front,
+    double tail,
+    double width,
+    Color colour,
+  ) {
+    final a = turn * 2 * math.pi;
+    final dir = Offset(math.sin(a), -math.cos(a));
+    canvas.drawLine(
+      centre - dir * tail,
+      centre + dir * front,
+      Paint()
+        ..color = colour
+        ..strokeWidth = width
+        ..strokeCap = StrokeCap.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_DialPainter old) =>
+      old.elapsed != elapsed ||
+      old.lap != lap ||
+      old.ink != ink ||
+      old.secondary != secondary ||
+      old.face != face ||
+      old.hole != hole;
 }

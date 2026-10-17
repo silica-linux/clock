@@ -129,6 +129,27 @@ void main() {
     },
   );
 
+  testWidgets('analog stopwatch: dial at 142, 360 pt, laps table at 562', (
+    tester,
+  ) async {
+    final c = await pump(tester);
+    c.analogStopwatch = true;
+    c.select(Section.stopwatch);
+    await tester.pump();
+    final dial = tester.getRect(find.byKey(const ValueKey('analog dial')));
+    expect(dial.left, 142);
+    expect(dial.top, 192);
+    expect(dial.size, const Size(360, 360));
+    expect(find.text('00:00.00'), findsOneWidget);
+    expect(find.text('60'), findsOneWidget);
+    await tester.tap(find.text('Start'));
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('Stop'), findsOneWidget);
+    await tester.tap(find.text('Stop'));
+    await tester.pump();
+    await done(tester, c);
+  });
+
   testWidgets('stopwatch: digits, start and laps, Italian comma', (
     tester,
   ) async {

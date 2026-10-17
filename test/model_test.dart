@@ -165,12 +165,14 @@ void main() {
       ..alarms = [const Alarm(id: 1, hour: 7, minute: 0, label: 'Up')]
       ..recents = [const RecentTimer(Duration(minutes: 3), 'Eggs')]
       ..section = 2
+      ..analogStopwatch = true
       ..save();
     final again = Settings(path)..load();
     expect(again.cities, s.cities);
     expect(again.alarms, s.alarms);
     expect(again.recents, s.recents);
     expect(again.section, 2);
+    expect(again.analogStopwatch, isTrue);
     expect(again.nextAlarmId(), 2);
     File(path).writeAsStringSync('{not json');
     final broken = Settings(path)..load();

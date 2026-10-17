@@ -190,7 +190,10 @@ class _ClockWindowState extends State<ClockWindow> {
         controller: c,
         onEdit: (a) => setState(() => _editing = a),
       ),
-      Section.stopwatch => StopwatchView(controller: c),
+      Section.stopwatch =>
+        c.analogStopwatch
+            ? AnalogStopwatchView(controller: c)
+            : StopwatchView(controller: c),
       Section.timers => TimersView(controller: c),
     };
     // The ⌘ shortcuts (⌘1–⌘4 for the sections) are the menu bar's: SilicaMenuBar binds them.
@@ -312,16 +315,18 @@ class _ClockWindowState extends State<ClockWindow> {
                 ),
             ],
           ),
-          // The stopwatch is digital only for now: both styles are listed, as measured, but
-          // the analog one does not exist yet.
           PlatformMenuItemGroup(
             members: [
               SilicaMenuItem(
                 label: l.stopwatchDigital,
-                checked: true,
-                enabled: false,
+                checked: !c.analogStopwatch,
+                onSelected: () => c.analogStopwatch = false,
               ),
-              SilicaMenuItem(label: l.stopwatchAnalog, enabled: false),
+              SilicaMenuItem(
+                label: l.stopwatchAnalog,
+                checked: c.analogStopwatch,
+                onSelected: () => c.analogStopwatch = true,
+              ),
             ],
           ),
         ],

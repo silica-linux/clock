@@ -1,5 +1,5 @@
 // What the app keeps between launches, in `$XDG_CONFIG_HOME/clock/settings.json`: the cities of
-// the world clock, the alarms, the recent timers and the last section.
+// the world clock, the alarms, the recent timers, the last section and the stopwatch style.
 
 import 'dart:convert';
 import 'dart:io';
@@ -23,6 +23,9 @@ class Settings {
   List<Alarm> alarms = [];
   List<RecentTimer> recents = [];
   int section = 0;
+
+  /// The stopwatch face: analog (true) or digital.
+  bool analogStopwatch = false;
 
   void load() {
     final p = path;
@@ -50,6 +53,7 @@ class Settings {
       ];
       final s = json['section'];
       if (s is int && s >= 0 && s < 4) section = s;
+      analogStopwatch = json['analogStopwatch'] == true;
     } on FileSystemException {
       // Unreadable: start empty.
     } on FormatException {
@@ -70,6 +74,7 @@ class Settings {
           'alarms': [for (final a in alarms) a.toJson()],
           'recentTimers': [for (final r in recents) r.toJson()],
           'section': section,
+          'analogStopwatch': analogStopwatch,
         }),
       );
       tmp.renameSync(p);

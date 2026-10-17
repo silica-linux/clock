@@ -23,6 +23,14 @@ abstract final class ClockFace {
 }
 
 /// The map, drawn in the app (the kit shows an image): black oceans and gray land.
+/// The analog stopwatch dial (kit `Stopwatch Analog / Dark`; the app is dark only).
+abstract final class ClockDial {
+  static const Color face = Color(0xFF272727);
+
+  /// The window surface seen through the centre cap.
+  static const Color hole = Color(0xFF1E1E1E);
+}
+
 abstract final class ClockMap {
   static const Color ocean = Color(0xFF000000);
   static const Color land = Color(0xFF2C2C2E);
