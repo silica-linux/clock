@@ -147,6 +147,32 @@ void main() {
     await done(tester, c);
   });
 
+  // Masters `Apps/Clock/Toolbar` (World), `Toolbar Alarms|Stopwatch|Timers` and `Tabs ...`: the
+  // same 360 x 36 control with four 88 pt segments (the track 4 pt inside), the selected one
+  // being 0 World, 1 Alarms, 2 Stopwatch, 3 Timers (kit segments 1..4 filled in turn).
+  for (final (section, index) in [
+    (Section.world, 0),
+    (Section.alarms, 1),
+    (Section.stopwatch, 2),
+    (Section.timers, 3),
+  ]) {
+    testWidgets('Toolbar ${section.name}: segment ${index + 1} selected', (
+      tester,
+    ) async {
+      final c = await pump(tester, section);
+      expect(
+        rectOf(tester, find.byKey(const ValueKey('section control'))),
+        const Rect.fromLTWH(354, 8, 360, 36),
+      );
+      final control = tester.widget<AmalfiSegmentedControl>(
+        find.byType(AmalfiSegmentedControl),
+      );
+      expect(control.selected, {index});
+      expect(control.segments, hasLength(4));
+      await done(tester, c);
+    });
+  }
+
   testWidgets('World: map, pins and the five city cards', (tester) async {
     final c = await pump(tester, Section.world);
     // Apps/Clock/World: Map 0,52 1024×480; cards 184×220 at x 20 + 200 i, y 548.
