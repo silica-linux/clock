@@ -97,6 +97,7 @@ class SectionControl extends StatelessWidget {
     key: const ValueKey('section control'),
     child: AmalfiSegmentedControl(
       size: AmalfiControlSize.large,
+      toolbar: true,
       segments: [
         for (final n in sectionNames(AppLocalizations.of(context)))
           AmalfiSegment.text(n),

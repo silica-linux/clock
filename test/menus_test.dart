@@ -81,11 +81,11 @@ void main() {
       'Window',
       'Help',
     ]);
-    // File: the recent timers submenu (empty here), Close (system) and Close All (disabled).
+    // File: the recent timers submenu (empty here), Close (system) and Close All (enabled, the Close All role).
     final recent = item('File', 'Start Recent Timer')['items'] as List;
     expect(recent.single, containsPair('enabled', false));
     expect(items('File').any((i) => i['role'] == 'close'), isTrue);
-    expect(item('File', 'Close All')['enabled'], isFalse);
+    expect(item('File', 'Close All')['enabled'], isTrue);
     // Edit: every item is there, disabled.
     final edit = items('Edit').where((i) => i['separator'] != true);
     expect(edit.map((i) => i['role']), [
@@ -181,7 +181,7 @@ void main() {
       'Aiuto',
     ]);
     expect(item('Vista', 'Ore locali')['checked'], isTrue);
-    expect(item('File', 'Chiudi tutto')['enabled'], isFalse);
+    expect(item('File', 'Chiudi tutto')['enabled'], isTrue);
     await done(tester, c);
   });
 }

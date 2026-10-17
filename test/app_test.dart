@@ -111,8 +111,8 @@ void main() {
       final control = tester.getRect(
         find.byKey(const ValueKey('section control')),
       );
-      // Kit `Apps/Clock/Toolbar`: the control is 360 × 32 at x 356, y 10 of the 52 pt bar.
-      expect(control, const Rect.fromLTWH(356, 10, 360, 32));
+      // Kit `Apps/Clock/Toolbar`: the control is 360 × 36 at x 354, y 8 of the 52 pt bar.
+      expect(control, const Rect.fromLTWH(354, 8, 360, 36));
       await tester.tap(find.text('Stopwatch'));
       // The content changes at once; the lens and the thumb settle through their springs.
       await tester.pump();
@@ -241,7 +241,7 @@ void main() {
         find.byKey(const ValueKey('section control')),
       );
       // Kit: the toolbar is the same with or without the list.
-      expect(control, const Rect.fromLTWH(356, 10, 360, 32));
+      expect(control, const Rect.fromLTWH(354, 8, 360, 36));
       // The ring centres on the area right of the 320 pt list.
       expect(
         tester.getCenter(find.byKey(const ValueKey('timer ring'))).dx,
@@ -489,17 +489,17 @@ void main() {
   });
 
   testWidgets(
-    'the toolbar "+" is the silica_ui toolbar button, 32 pt at x 976 (#2)',
+    'the toolbar "+" is the silica_ui toolbar button, 36 pt at x 972 (#2)',
     (tester) async {
       final c = await pump(tester);
       expect(
         tester.widget(find.byKey(const ValueKey('add'))),
         isA<AmalfiToolbarButton>(),
       );
-      // Kit `Toolbar`: the `Add` piece is 972 + 44, its 32 pt button 4 pt inside, centred.
+      // Kit `Toolbar`: the `Add` piece is 968 + 48, its 36 pt button 4 pt inside, centred.
       expect(
         tester.getRect(find.byKey(const ValueKey('add'))),
-        const Rect.fromLTWH(976, 10, 32, 32),
+        const Rect.fromLTWH(972, 8, 36, 36),
       );
       await done(tester, c);
     },

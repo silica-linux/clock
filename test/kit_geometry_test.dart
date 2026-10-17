@@ -133,16 +133,16 @@ void main() {
     tester,
   ) async {
     final c = await pump(tester, Section.world);
-    // Apps/Clock/Toolbar: Controls 4,0 96×52; Segmented Text 352,0 368×52 with the 360×32
-    // control at +4,+10; Add 972,0 44×52 with the 32×32 button at +4,+10; 52 tall.
+    // Apps/Clock/Toolbar: Controls 4,0 96×52; Segmented Text 350,0 368×52 with the 360×36
+    // control at +4,+8; Add 968,0 48×52 with the 36×36 button at +4,+8; 52 tall.
     expect(tester.getSize(find.byType(AmalfiToolbar)), const Size(1024, 52));
     expect(
       rectOf(tester, find.byKey(const ValueKey('section control'))),
-      const Rect.fromLTWH(356, 10, 360, 32),
+      const Rect.fromLTWH(354, 8, 360, 36),
     );
     expect(
       rectOf(tester, find.byKey(const ValueKey('add'))),
-      const Rect.fromLTWH(976, 10, 32, 32),
+      const Rect.fromLTWH(972, 8, 36, 36),
     );
     await done(tester, c);
   });

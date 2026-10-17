@@ -45,9 +45,9 @@ abstract final class ClockMetrics {
   static const Size window = Size(1024, 800);
   static const Size minWindow = Size(690, 640);
 
-  /// The toolbar's round "+" is a piece of 44 pt (4 + 32 + 8), kept as an empty slot in the
+  /// The toolbar's round "+" is a piece of 48 pt (4 + 36 + 8), kept as an empty slot in the
   /// stopwatch so that the section control does not move between sections.
-  static const double addPiece = 44;
+  static const double addPiece = 48;
 
   /// The window controls are drawn by Ossido over the toolbar: a 96 pt slot (kit piece
   /// `Controls`).

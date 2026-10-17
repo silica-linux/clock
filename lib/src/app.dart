@@ -289,8 +289,8 @@ class _ClockWindowState extends State<ClockWindow> {
           PlatformMenuItemGroup(
             members: [
               const SilicaMenuItem.system(SilicaMenuItemRole.close),
-              // One window: there is nothing more to close; the item stays, as measured.
-              SilicaMenuItem(label: l.closeAll, enabled: false),
+              // The system Close All role: closes every window of the app.
+              SilicaMenuItem.closeAll(label: l.closeAll),
             ],
           ),
         ],
